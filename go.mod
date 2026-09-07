@@ -1,4 +1,4 @@
-module github.com/Lance52259/gitbook-practice-synchronization
+module github.com/chnsz/gitbook-practice-synchronization
 
 go 1.22
 

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/gitops"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/config"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/gitops"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
 )
 
 func TestApplyAndPushCreatesBranchWithoutDeleteNoise(t *testing.T) {

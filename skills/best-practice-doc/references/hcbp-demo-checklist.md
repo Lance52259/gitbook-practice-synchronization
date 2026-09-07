@@ -1,9 +1,10 @@
 # hcbp-demo 变更清单速查（中英双语）
 
-来源约定见 [.cursor/rules/best-practice-style.mdc](https://github.com/Lance52259/hcbp-demo/blob/master/.cursor/rules/best-practice-style.mdc) 与模板：
+来源约定见 C 仓（`$C_REPO`，如 [chnsz/hcbp-demo](https://github.com/chnsz/hcbp-demo)）的
+[.cursor/rules/best-practice-style.mdc](https://github.com/chnsz/hcbp-demo/blob/master/.cursor/rules/best-practice-style.mdc) 与模板：
 
-- [templates/best_practice.md](https://github.com/Lance52259/hcbp-demo/blob/master/templates/best_practice.md)
-- [templates/category_index.md](https://github.com/Lance52259/hcbp-demo/blob/master/templates/category_index.md)
+- [templates/best_practice.md](https://github.com/chnsz/hcbp-demo/blob/master/templates/best_practice.md)
+- [templates/category_index.md](https://github.com/chnsz/hcbp-demo/blob/master/templates/category_index.md)
 
 ## 强制顺序（1 → 8）
 
@@ -41,4 +42,4 @@
 - 中文正文：`docs/zh-cn/best-practices/ecs/simple_instance.md`
 - 英文正文：`docs/en-us/best-practices/ecs/simple_instance.md`
 - 分类页（权威）：`docs/{zh-cn|en-us}/best-practices/anti-ddos/index.md`
-- 源脚本根：https://github.com/huaweicloud/terraform-provider-huaweicloud/tree/master/examples
+- 源脚本根：由 `$B_REPO` + `$B_DEFAULT_BRANCH` + `$B_EXAMPLES_PATH` 决定（如 https://github.com/huaweicloud/terraform-provider-huaweicloud/tree/master/examples）

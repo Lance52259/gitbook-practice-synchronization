@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/config"
 )
 
 var ownerRepoRe = regexp.MustCompile(`(?i)github\.com[:/](.+?)/(.+?)(?:\.git)?$`)

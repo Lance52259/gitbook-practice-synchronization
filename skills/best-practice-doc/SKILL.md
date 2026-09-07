@@ -2,7 +2,7 @@
 name: best-practice-doc
 description: 从 B 仓 examples 生成中英双语文档并 PR 到 C 仓（仓库由环境变量 / 配置指定，勿写死）
 version: "0.3.9"
-# B/C 具体仓库不在此写死。运行时由 B_REPO / C_REPO（及 default_config / .env）注入。
+# B/C 具体仓库不在此写死。运行时由必填环境变量 B_REPO / C_REPO（及 .env）注入。
 role_b: source examples repo（B_REPO, B_EXAMPLES_PATH, B_DEFAULT_BRANCH）
 role_c: docs + PR target repo（C_REPO, C_DOCS_ROOT, C_DEFAULT_BRANCH）
 ---

@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
 )
 
 var docsServiceTitleRe = regexp.MustCompile(`(?i)^docs\(([^)]+)\):\s*`)

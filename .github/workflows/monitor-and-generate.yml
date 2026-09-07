@@ -34,12 +34,11 @@ jobs:
           practice: ${{ inputs.practice || '' }}
           dry_run: ${{ inputs.dry_run && 'true' || 'false' }}
         env:
-          # B 仓默认 terraform-provider-huaweicloud；可用 Secret 覆盖
-          B_REPO: ${{ secrets.B_REPO || 'huaweicloud/terraform-provider-huaweicloud' }}
+          # B / C 仓必填，无工作流内置默认值
+          B_REPO: ${{ secrets.B_REPO }}
           B_REPO_TOKEN: ${{ secrets.B_REPO_TOKEN }}
           B_DEFAULT_BRANCH: ${{ vars.B_DEFAULT_BRANCH || 'master' }}
-          # C 仓默认 hcbp-demo；可用 Secret 覆盖
-          C_REPO: ${{ secrets.C_REPO || 'Lance52259/hcbp-demo' }}
+          C_REPO: ${{ secrets.C_REPO }}
           C_REPO_TOKEN: ${{ secrets.C_REPO_TOKEN }}
           C_DEFAULT_BRANCH: ${{ vars.C_DEFAULT_BRANCH || 'master' }}
           AI_API_KEY: ${{ secrets.AI_API_KEY }}

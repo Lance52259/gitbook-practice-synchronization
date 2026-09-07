@@ -1,4 +1,4 @@
-# Map B (terraform-provider-huaweicloud/examples) → C (hcbp-demo docs).
+# Map B ($B_REPO examples) → C ($C_REPO docs).
 # C 仓服务目录按华为云产品命名，不等于 examples 目录名照抄。
 
 defaults:
