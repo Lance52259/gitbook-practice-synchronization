@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/nav"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/nav"
 )
 
 func writeTree(t *testing.T, root string, files map[string]string) {

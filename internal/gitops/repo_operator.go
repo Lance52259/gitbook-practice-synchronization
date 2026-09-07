@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/monitor"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/config"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/monitor"
 )
 
 // RepoOperator applies generated files and pushes a branch.

@@ -2,7 +2,7 @@
 
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![CI](https://github.com/Lance52259/gitbook-practice-synchronization/actions/workflows/test-workflow.yml/badge.svg)](https://github.com/Lance52259/gitbook-practice-synchronization/actions/workflows/test-workflow.yml)
+[![CI](https://github.com/chnsz/gitbook-practice-synchronization/actions/workflows/test-workflow.yml/badge.svg)](https://github.com/chnsz/gitbook-practice-synchronization/actions/workflows/test-workflow.yml)
 
 从 **B 仓**（环境变量 `B_REPO`）的 `examples/` 自动发现新增最佳实践，按 Skill 约束调用 DeepSeek 生成 **中英双语文档**，并向 **C 仓**（环境变量 `C_REPO`）提交 Pull Request。
 
@@ -90,7 +90,7 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/Lance52259/gitbook-practice-synchronization.git
+git clone https://github.com/chnsz/gitbook-practice-synchronization.git
 cd gitbook-practice-synchronization
 
 cp .env.example .env

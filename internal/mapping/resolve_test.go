@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/config"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
 )
 
 func TestResolveAntiddosAlias(t *testing.T) {

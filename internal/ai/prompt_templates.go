@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/ai/provider"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/ai/provider"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
 )
 
 const outputSchemaHint = `你必须只输出一个 JSON 对象（不要 Markdown 围栏），格式如下：

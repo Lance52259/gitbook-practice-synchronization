@@ -10,13 +10,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/ai"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/ai/provider"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/gitops"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/mapping"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/monitor"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/ai"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/ai/provider"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/config"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/gitops"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/mapping"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/monitor"
 )
 
 func main() {

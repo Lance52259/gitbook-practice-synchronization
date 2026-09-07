@@ -7,7 +7,7 @@ func TestWorktreeDirName(t *testing.T) {
 		role, repo, want string
 	}{
 		{"b", "huaweicloud/terraform-provider-huaweicloud", "b-huaweicloud-terraform-provider-huaweicloud"},
-		{"c", "Lance52259/hcbp-demo", "c-Lance52259-hcbp-demo"},
+		{"c", "chnsz/hcbp-demo", "c-chnsz-hcbp-demo"},
 		{"b", "https://github.com/org/repo.git", "b-org-repo"},
 	}
 	for _, tc := range cases {

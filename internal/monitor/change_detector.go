@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/mapping"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/config"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/mapping"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
 )
 
 // EnumeratePractices lists practices under examples/.

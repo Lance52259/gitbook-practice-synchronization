@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/monitor"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/config"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/monitor"
 )
 
 func makeExamples(t *testing.T, root string) {

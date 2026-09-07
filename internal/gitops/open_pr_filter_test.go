@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/gitops"
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/config"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/gitops"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/model"
 )
 
 func TestPracticeBranch(t *testing.T) {
@@ -34,20 +34,20 @@ func TestServiceFromPRTitle(t *testing.T) {
 
 func TestFilterOpenPRs_ServiceAndOnePerScan(t *testing.T) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/repos/Lance52259/hcbp-demo/pulls", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/repos/chnsz/hcbp-demo/pulls", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("state") != "open" {
 			t.Fatalf("state=%s", r.URL.Query().Get("state"))
 		}
 		_ = json.NewEncoder(w).Encode([]map[string]any{
 			{
 				"number":   11,
-				"html_url": "https://github.com/Lance52259/hcbp-demo/pull/11",
+				"html_url": "https://github.com/chnsz/hcbp-demo/pull/11",
 				"title":    "docs(dcs): support new best practice for redis account",
 				"head":     map[string]any{"ref": "gitbook-practice-synchronization/examples-dcs-redis-account"},
 			},
 			{
 				"number":   99,
-				"html_url": "https://github.com/Lance52259/hcbp-demo/pull/99",
+				"html_url": "https://github.com/chnsz/hcbp-demo/pull/99",
 				"title":    "docs: missing service",
 				"head":     map[string]any{"ref": "feature/other"},
 			},
@@ -57,7 +57,7 @@ func TestFilterOpenPRs_ServiceAndOnePerScan(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	prm, err := gitops.NewPRManager(&config.Settings{
-		CRepo:      "Lance52259/hcbp-demo",
+		CRepo:      "chnsz/hcbp-demo",
 		CRepoToken: "test-token",
 	})
 	if err != nil {

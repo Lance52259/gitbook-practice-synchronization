@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Lance52259/gitbook-practice-synchronization/internal/ai/provider"
+	"github.com/chnsz/gitbook-practice-synchronization/internal/ai/provider"
 )
 
 func TestDeepSeekOpenAICompatible(t *testing.T) {
