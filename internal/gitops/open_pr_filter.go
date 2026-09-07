@@ -13,7 +13,8 @@ import (
 
 var docsServiceTitleRe = regexp.MustCompile(`(?i)^docs\(([^)]+)\):\s*`)
 
-// PracticeBranch returns the doc-craft head branch for a practice_id.
+// PracticeBranch returns the head branch for a practice_id
+// (gitbook-practice-synchronization convention: doc-craft/<practice-id-with-dashes>).
 // Example: examples/antiddos/basic → doc-craft/examples-antiddos-basic
 func PracticeBranch(practiceID string) string {
 	slug := strings.ReplaceAll(practiceID, "/", "-")
@@ -24,7 +25,7 @@ func PracticeBranch(practiceID string) string {
 	return name
 }
 
-// ServiceFromPRTitle extracts the C-repo service from a doc-craft PR title.
+// ServiceFromPRTitle extracts the C-repo service from a PR title.
 // Example: docs(dcs): support new best practice for redis account → dcs
 func ServiceFromPRTitle(title string) string {
 	m := docsServiceTitleRe.FindStringSubmatch(strings.TrimSpace(title))
@@ -34,7 +35,7 @@ func ServiceFromPRTitle(title string) string {
 	return strings.ToLower(strings.TrimSpace(m[1]))
 }
 
-// OpenDocCraftPR is an open PR whose head branch is under doc-craft/.
+// OpenDocCraftPR is an open PR whose head branch uses the doc-craft/ prefix.
 type OpenDocCraftPR struct {
 	Number  int
 	URL     string
@@ -103,7 +104,8 @@ func (m *PRManager) ListOpenDocCraftPRs() ([]OpenDocCraftPR, error) {
 	return out, nil
 }
 
-// FilterOpenPRs skips practices whose C-repo service already has an open doc-craft PR,
+// FilterOpenPRs skips practices whose C-repo service already has an open
+// gitbook-practice-synchronization PR (head under doc-craft/),
 // and keeps at most one practice per service in this scan (first wins).
 //
 // serviceOf must return the canonical C docs service directory (after aliases), e.g. anti-ddos.

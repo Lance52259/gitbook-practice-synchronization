@@ -24,10 +24,10 @@ jobs:
     # Secrets 配置在 Settings → Environments → Development 时必须声明
     environment: Development
     steps:
-      - name: Checkout doc-craft
+      - name: Checkout gitbook-practice-synchronization
         uses: actions/checkout@v4
 
-      - name: Run doc-craft
+      - name: Run gitbook-practice-synchronization
         uses: ./.github/actions/doc-craft-action
         with:
           mode: run

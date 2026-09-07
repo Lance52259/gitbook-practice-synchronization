@@ -44,7 +44,8 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Fprintf(os.Stderr, `doc-craft — B examples → C docs PR (DeepSeek)
+	fmt.Fprintf(os.Stderr, `gitbook-practice-synchronization — B examples → C docs PR (DeepSeek)
+CLI binary: doc-craft
 
 Usage:
   doc-craft detect [--out FILE] [--no-refresh]
@@ -55,7 +56,7 @@ Env:
   MAX_PRACTICES   max new practices per run after filters (0 = unlimited)
 
 Notes:
-  Open doc-craft PRs on C block their entire docs({service}); at most one
+  Open doc-craft/* PRs on C block their entire docs({service}); at most one
   practice per service is processed per scan until that PR is merged.
 `)
 }

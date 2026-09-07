@@ -1,6 +1,6 @@
 # Skills
 
-本目录存放 doc-craft 用于驱动 DeepSeek 生成文档的 Skill。
+本目录存放 gitbook-practice-synchronization 用于驱动 DeepSeek 生成文档的 Skill。
 
 | Skill ID | 说明 |
 |----------|------|

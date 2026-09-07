@@ -48,6 +48,7 @@ func TestBuildPRBody(t *testing.T) {
 		"English body:",
 		"Skill `best-practice-doc` + `DeepSeek`",
 		"Best Practice Source Code Reference For {ServiceName} {PracticeObject}",
+		"gitbook-practice-synchronization",
 	}
 	for _, n := range needles {
 		if !strings.Contains(body, n) {

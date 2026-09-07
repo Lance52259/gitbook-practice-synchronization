@@ -72,10 +72,10 @@ func (o *RepoOperator) ApplyAndPush(repoPath, branchName, baseBranch string, res
 	}
 
 	env := append(os.Environ(),
-		"GIT_AUTHOR_NAME=doc-craft",
-		"GIT_AUTHOR_EMAIL=doc-craft@users.noreply.github.com",
-		"GIT_COMMITTER_NAME=doc-craft",
-		"GIT_COMMITTER_EMAIL=doc-craft@users.noreply.github.com",
+		"GIT_AUTHOR_NAME=gitbook-practice-synchronization",
+		"GIT_AUTHOR_EMAIL=gitbook-practice-synchronization@users.noreply.github.com",
+		"GIT_COMMITTER_NAME=gitbook-practice-synchronization",
+		"GIT_COMMITTER_EMAIL=gitbook-practice-synchronization@users.noreply.github.com",
 	)
 	cmd := exec.Command("git", "commit", "-m", commitMessage)
 	cmd.Dir = repoPath

@@ -1,4 +1,4 @@
-# Default runtime configuration for doc-craft (Go).
+# Default runtime configuration for gitbook-practice-synchronization (Go).
 # Environment variables / Secrets override these values.
 
 repos:

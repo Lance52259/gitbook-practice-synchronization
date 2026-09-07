@@ -1,5 +1,5 @@
-name: doc-craft
-description: Detect new best practices and open AI-generated doc PRs (DeepSeek / Go). Skips services that already have an open doc-craft PR; at most one practice per service per scan.
+name: gitbook-practice-synchronization
+description: Detect new best practices and open AI-generated doc PRs (DeepSeek / Go). Skips services that already have an open tool PR (branch prefix doc-craft/); at most one practice per service per scan.
 inputs:
   mode:
     description: "run | detect | generate"

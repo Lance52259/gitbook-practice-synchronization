@@ -16,7 +16,7 @@ B/C 的 owner/name、默认分支均以**当前运行配置为准**，本文件�
 
 ## 目标
 
-依据 B 仓实践目录中的 Terraform HCL，按 C 仓模板与导航约定，生成 **中文 + 英文** Markdown 变更，并由 doc-craft **向 C 仓推送分支并创建 PR**（基于 `C_DEFAULT_BRANCH`，常见为 `master`）。
+依据 B 仓实践目录中的 Terraform HCL，按 C 仓模板与导航约定，生成 **中文 + 英文** Markdown 变更，并由 gitbook-practice-synchronization **向 C 仓推送分支并创建 PR**（基于 `C_DEFAULT_BRANCH`，常见为 `master`）。
 
 ---
 
@@ -57,7 +57,7 @@ B/C 的 owner/name、默认分支均以**当前运行配置为准**，本文件�
 2. **index.md**：服务目录已存在 → **update** 列表项；服务目录首次创建 → **create** 全文（不要 update 不存在的文件）。**新建全文必须达到 Anti-DDoS 同等结构与篇幅**（见「分类 index.md 规范」），禁止只写一句话简介 + 裸链接列表。
 3. **README.md（中英均适用，新增服务时）**：必须按「README 导航条目规范」从对应语言的 `index.md` 截取标题与简介，**禁止占位描述**。
 4. 所有导航 `update` 必须是「基线全文 + 最小插入」；非空行数不得明显少于基线。
-5. 优先由 doc-craft 编排层对导航做确定性补丁；模型至少输出步骤 1–2 的正文，新服务时输出中英 `index.md` 的 create（须符合「分类 index.md 规范」，含完整「What is / 什么是」多段介绍，供 README 截取）。
+5. 优先由 gitbook-practice-synchronization 编排层对导航做确定性补丁；模型至少输出步骤 1–2 的正文，新服务时输出中英 `index.md` 的 create（须符合「分类 index.md 规范」，含完整「What is / 什么是」多段介绍，供 README 截取）。
 
 ### README 导航条目规范（`docs/{zh-cn|en-us}/best-practices/README.md`）
 
