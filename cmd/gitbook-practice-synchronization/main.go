@@ -52,6 +52,8 @@ Usage:
   gitbook-practice-synchronization run [--practice ID] [--dry-run] [--no-refresh]
 
 Env:
+  B_REPO          required, source examples repo (owner/name)
+  C_REPO          required, docs / PR target repo (owner/name)
   MAX_PRACTICES   max new practices per run after filters (0 = unlimited)
 
 Notes:

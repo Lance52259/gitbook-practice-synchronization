@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![CI](https://github.com/Lance52259/gitbook-practice-synchronization/actions/workflows/test-workflow.yml/badge.svg)](https://github.com/Lance52259/gitbook-practice-synchronization/actions/workflows/test-workflow.yml)
 
-从 [Huawei Cloud Terraform Provider](https://github.com/huaweicloud/terraform-provider-huaweicloud) 的 `examples/` 自动发现新增最佳实践，按 Skill 约束调用 DeepSeek 生成 **中英双语文档**，并向 GitBook 文档仓提交 Pull Request。
+从 **B 仓**（环境变量 `B_REPO`）的 `examples/` 自动发现新增最佳实践，按 Skill 约束调用 DeepSeek 生成 **中英双语文档**，并向 **C 仓**（环境变量 `C_REPO`）提交 Pull Request。
 
 ---
 
@@ -26,15 +26,15 @@
 
 ## 背景
 
-华为云最佳实践文档（目标仓 [hcbp-demo](https://github.com/Lance52259/hcbp-demo)）需要与 Provider 仓库中的 Terraform examples 保持同步。手工对照成本高、易漏改导航（尤其是 `SUMMARY.md`）。
+华为云最佳实践文档仓（C，由 `C_REPO` 指定）需要与 Provider examples 源仓（B，由 `B_REPO` 指定）保持同步。手工对照成本高、易漏改导航（尤其是 `SUMMARY.md`）。
 
 **gitbook-practice-synchronization** 把「探测 → 生成 → 开 PR」做成可重复流水线：本仓库负责编排与 Skill；源仓提供 examples；文档仓接收变更。
 
 | 角色 | 仓库 | 职责 |
 |------|------|------|
 | **A** | 本仓库（**gitbook-practice-synchronization**） | CLI、Skill、映射、Actions |
-| **B** | [huaweicloud/terraform-provider-huaweicloud](https://github.com/huaweicloud/terraform-provider-huaweicloud) | `examples/` 最佳实践源 |
-| **C** | [Lance52259/hcbp-demo](https://github.com/Lance52259/hcbp-demo) | 中英文档与 PR 目标 |
+| **B** | `$B_REPO` 指定的源仓库，如：[huaweicloud/terraform-provider-huaweicloud](https://github.com/huaweicloud/terraform-provider-huaweicloud) | `examples/` 最佳实践源 |
+| **C** | `$C_REPO` 指定的目标推送仓库，如：[chnsz/hcbp-demo](https://github.com/chnsz/hcbp-demo) | 中英文档与 PR 目标 |
 
 ---
 
@@ -66,7 +66,7 @@
                                                │
                                                ▼
 ┌─────────────┐     branch + PR     ┌──────────────────────┐
-│ C: hcbp     │ ◄─────────────────  | nav patch + gitops   │
+│ C: docs     │ ◄─────────────────  | nav patch + gitops   │
 └─────────────┘                     └──────────────────────┘
 ```
 
@@ -94,7 +94,7 @@ git clone https://github.com/Lance52259/gitbook-practice-synchronization.git
 cd gitbook-practice-synchronization
 
 cp .env.example .env
-# 编辑 .env：至少填写 AI_API_KEY；正式推 PR 还需 C_REPO_TOKEN
+# 编辑 .env：必填 B_REPO、C_REPO、AI_API_KEY；正式推 PR 还需 C_REPO_TOKEN
 
 make build
 make detect          # 仅探测，打印 JSON
@@ -130,7 +130,7 @@ GitHub Actions：本仓库工作流使用 `environment: Development`，请在 **
 
 | 变量 | 默认 | Actions 位置 | 说明 |
 |------|------|--------------|------|
-| `B_REPO` | `huaweicloud/terraform-provider-huaweicloud` | **Secret 或默认值**（`secrets.B_REPO`，未设则用内置默认） | 源仓库 `owner/name` |
+| `B_REPO` | —（**必填**） | **Secret**（`secrets.B_REPO`） | 源仓库 `owner/name`，无内置默认；如 `huaweicloud/terraform-provider-huaweicloud` |
 | `B_REPO_TOKEN` | _(空)_ | **Secret** | 读 B 仓；公开仓可省略 |
 | `B_EXAMPLES_PATH` | `examples` | **仅本地**（Actions 未单独注入） | examples 根路径 |
 | `B_DEFAULT_BRANCH` | `master` | **Variable**（`vars.B_DEFAULT_BRANCH`） | B 仓分支 |
@@ -139,7 +139,7 @@ GitHub Actions：本仓库工作流使用 `environment: Development`，请在 **
 
 | 变量 | 默认 | Actions 位置 | 说明 |
 |------|------|--------------|------|
-| `C_REPO` | `Lance52259/hcbp-demo` | **Secret 或默认值**（`secrets.C_REPO`，未设则用内置默认） | 文档 / PR 目标仓 |
+| `C_REPO` | —（**必填**） | **Secret**（`secrets.C_REPO`） | 文档 / PR 目标仓 `owner/name`，无内置默认；如 `chnsz/hcbp-demo` |
 | `C_REPO_TOKEN` | _(空)_ | **Secret**（必填，非 dry-run） | 写分支 + 开 PR |
 | `C_DOCS_ROOT` | `docs/zh-cn/best-practices` | **仅本地** | 中文文档根（探测用） |
 | `C_DEFAULT_BRANCH` | `master` | **Variable**（`vars.C_DEFAULT_BRANCH`） | PR base |
@@ -194,8 +194,8 @@ Secrets / Variables 建议放在 **Environment `Development`**（工作流已声
 
 | 类型 | 配置项 |
 |------|--------|
-| **Secrets（必填）** | `AI_API_KEY`、`C_REPO_TOKEN` |
-| **Secrets（可选）** | `B_REPO_TOKEN`；覆盖默认仓时可用 `B_REPO`、`C_REPO` |
+| **Secrets（必填）** | `B_REPO`、`C_REPO`、`AI_API_KEY`、`C_REPO_TOKEN` |
+| **Secrets（可选）** | `B_REPO_TOKEN` |
 | **Variables（可选）** | `MAX_PRACTICES`、`B_DEFAULT_BRANCH`、`C_DEFAULT_BRANCH`、`AI_BASE_URL`、`AI_MODEL`、`AI_MAX_TOKENS`、`AI_TIMEOUT_SECONDS`、`SKILL_ID` |
 
 `MAX_PRACTICES` 等非敏感项请放 **Variables**；若放进 Secrets，工作流的 `vars.MAX_PRACTICES` 读不到，会回退为 `1`。

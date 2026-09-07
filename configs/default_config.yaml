@@ -3,8 +3,7 @@
 
 repos:
   b:
-    # 源仓（B）：https://github.com/huaweicloud/terraform-provider-huaweicloud
-    repo: huaweicloud/terraform-provider-huaweicloud
+    # 源仓（B）必填环境变量 B_REPO；如 huaweicloud/terraform-provider-huaweicloud（此处不写死）
     examples_path: examples
     default_branch: master
     ignore_names:
@@ -12,8 +11,7 @@ repos:
       - README
       - .gitkeep
   c:
-    # PR 目标仓（C）：https://github.com/Lance52259/hcbp-demo
-    repo: Lance52259/hcbp-demo
+    # 文档 / PR 目标仓（C）必填环境变量 C_REPO；如 chnsz/hcbp-demo（此处不写死）
     docs_root: docs/zh-cn/best-practices
     default_branch: master
     synced_manifest: synced-practices.json
@@ -47,7 +45,7 @@ runtime:
   max_practices: 0
 
 detection:
-  # nested_directory: examples/{service}/{practice}/ 为一条实践（对齐 terraform-provider-huaweicloud）
+  # nested_directory: examples/{service}/{practice}/ 为一条实践（对齐常见 Provider examples 布局）
   # directory: examples 下一层目录为一条实践
   granularity: nested_directory
   synced_strategy: hybrid

@@ -153,14 +153,13 @@ func Load() (*Settings, error) {
 	_ = godotenv.Load(filepath.Join(root, ".env"))
 
 	s := &Settings{
-		RepoRoot:           root,
-		BRepo:              "huaweicloud/terraform-provider-huaweicloud",
+		RepoRoot: root,
+		// BRepo / CRepo 无内置默认值，必须通过环境变量 B_REPO / C_REPO 提供。
 		BExamplesPath:      "examples",
 		BDefaultBranch:     "master",
 		IgnoreNames:        []string{"README.md", "README", ".gitkeep"},
 		CDocsRoot:          "docs/zh-cn/best-practices",
 		CDefaultBranch:     "master",
-		CRepo:              "Lance52259/hcbp-demo",
 		CSyncedManifest:    "synced-practices.json",
 		PathAllowlist:      []string{"docs/zh-cn/", "docs/en-us/"},
 		AIBaseURL:          "https://api.deepseek.com",
@@ -204,9 +203,7 @@ func Load() (*Settings, error) {
 }
 
 func applyFileConfig(s *Settings, fc *fileConfig) {
-	if fc.Repos.B.Repo != "" {
-		s.BRepo = fc.Repos.B.Repo
-	}
+	// repos.b.repo / repos.c.repo 已废弃：B_REPO / C_REPO 必须由环境变量提供，YAML 中的值忽略。
 	if fc.Repos.B.ExamplesPath != "" {
 		s.BExamplesPath = fc.Repos.B.ExamplesPath
 	}
@@ -215,9 +212,6 @@ func applyFileConfig(s *Settings, fc *fileConfig) {
 	}
 	if len(fc.Repos.B.IgnoreNames) > 0 {
 		s.IgnoreNames = fc.Repos.B.IgnoreNames
-	}
-	if fc.Repos.C.Repo != "" {
-		s.CRepo = fc.Repos.C.Repo
 	}
 	if fc.Repos.C.DocsRoot != "" {
 		s.CDocsRoot = fc.Repos.C.DocsRoot
@@ -344,14 +338,15 @@ func parseBool(v string) bool {
 
 func (s *Settings) RequireRepos() error {
 	var missing []string
-	if s.BRepo == "" {
+	// 强制要求环境变量；不允许仅依赖 YAML / 代码默认值。
+	if strings.TrimSpace(os.Getenv("B_REPO")) == "" || strings.TrimSpace(s.BRepo) == "" {
 		missing = append(missing, "B_REPO")
 	}
-	if s.CRepo == "" {
+	if strings.TrimSpace(os.Getenv("C_REPO")) == "" || strings.TrimSpace(s.CRepo) == "" {
 		missing = append(missing, "C_REPO")
 	}
 	if len(missing) > 0 {
-		return fmt.Errorf("missing required settings: %s", strings.Join(missing, ", "))
+		return fmt.Errorf("missing required environment variables: %s (owner/name, no built-in default)", strings.Join(missing, ", "))
 	}
 	return nil
 }
