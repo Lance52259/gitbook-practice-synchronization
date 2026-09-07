@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Lance52259/doc-draft/internal/gitops"
-	"github.com/Lance52259/doc-draft/internal/model"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/gitops"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
 )
 
 func TestBuildPRBody(t *testing.T) {

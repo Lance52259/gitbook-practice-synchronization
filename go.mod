@@ -1,4 +1,4 @@
-module github.com/Lance52259/doc-draft
+module github.com/Lance52259/gitbook-practice-synchronization
 
 go 1.22
 

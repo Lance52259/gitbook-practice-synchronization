@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Lance52259/doc-draft/internal/model"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
 )
 
 // PRBodyInput fills templates/pr_body.md placeholders.

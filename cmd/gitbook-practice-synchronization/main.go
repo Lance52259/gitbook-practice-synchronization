@@ -10,13 +10,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Lance52259/doc-draft/internal/ai"
-	"github.com/Lance52259/doc-draft/internal/ai/provider"
-	"github.com/Lance52259/doc-draft/internal/config"
-	"github.com/Lance52259/doc-draft/internal/gitops"
-	"github.com/Lance52259/doc-draft/internal/mapping"
-	"github.com/Lance52259/doc-draft/internal/model"
-	"github.com/Lance52259/doc-draft/internal/monitor"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/ai"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/ai/provider"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/gitops"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/mapping"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/monitor"
 )
 
 func main() {
@@ -45,19 +45,19 @@ func main() {
 
 func printUsage() {
 	fmt.Fprintf(os.Stderr, `gitbook-practice-synchronization — B examples → C docs PR (DeepSeek)
-CLI binary: doc-craft
 
 Usage:
-  doc-craft detect [--out FILE] [--no-refresh]
-  doc-craft generate [--practice ID] [--practices-file FILE] [--dry-run]
-  doc-craft run [--practice ID] [--dry-run] [--no-refresh]
+  gitbook-practice-synchronization detect [--out FILE] [--no-refresh]
+  gitbook-practice-synchronization generate [--practice ID] [--practices-file FILE] [--dry-run]
+  gitbook-practice-synchronization run [--practice ID] [--dry-run] [--no-refresh]
 
 Env:
   MAX_PRACTICES   max new practices per run after filters (0 = unlimited)
 
 Notes:
-  Open doc-craft/* PRs on C block their entire docs({service}); at most one
-  practice per service is processed per scan until that PR is merged.
+  Open tool PRs on C (branch prefix gitbook-practice-synchronization/) block
+  their entire docs({service}); at most one practice per service is processed
+  per scan until that PR is merged.
 `)
 }
 

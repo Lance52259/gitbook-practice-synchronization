@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Lance52259/doc-draft/internal/config"
-	"github.com/Lance52259/doc-draft/internal/gitops"
-	"github.com/Lance52259/doc-draft/internal/model"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/gitops"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
 )
 
 func TestApplyAndPushCreatesBranchWithoutDeleteNoise(t *testing.T) {
@@ -45,11 +45,11 @@ func TestApplyAndPushCreatesBranchWithoutDeleteNoise(t *testing.T) {
 			{Path: "docs/zh-cn/best-practices/ecs/basic.md", Content: "# ok\n", Action: "create"},
 		},
 	}
-	branch, err := op.ApplyAndPush(dir, "doc-craft/examples-ecs-basic", "master", result, "docs: test", true)
+	branch, err := op.ApplyAndPush(dir, "gitbook-practice-synchronization/examples-ecs-basic", "master", result, "docs: test", true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if branch != "doc-craft/examples-ecs-basic" {
+	if branch != "gitbook-practice-synchronization/examples-ecs-basic" {
 		t.Fatalf("branch=%s", branch)
 	}
 }
@@ -90,7 +90,7 @@ func TestResetToBaseClearsPriorPracticeBranch(t *testing.T) {
 			Content: "# Summary\n  * [DDS](best-practices/dds/)\n    * [Introduction](best-practices/dds/index.md)\n  * [DEW](best-practices/dew/)\n",
 		}},
 	}
-	if _, err := op.ApplyAndPush(dir, "doc-craft/examples-dds-eip", "master", dds, "docs(dds): eip", true); err != nil {
+	if _, err := op.ApplyAndPush(dir, "gitbook-practice-synchronization/examples-dds-eip", "master", dds, "docs(dds): eip", true); err != nil {
 		t.Fatal(err)
 	}
 	got, _ := os.ReadFile(summary)

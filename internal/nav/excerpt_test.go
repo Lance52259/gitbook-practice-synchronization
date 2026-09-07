@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Lance52259/doc-draft/internal/nav"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/nav"
 )
 
 func TestExcerptAADEnglishKeepsFullParagraph(t *testing.T) {

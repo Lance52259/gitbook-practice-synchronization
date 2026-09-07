@@ -7,15 +7,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Lance52259/doc-draft/internal/config"
-	"github.com/Lance52259/doc-draft/internal/gitops"
-	"github.com/Lance52259/doc-draft/internal/model"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/gitops"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
 )
 
 func TestPracticeBranch(t *testing.T) {
 	got := gitops.PracticeBranch("examples/antiddos/basic")
-	if got != "doc-craft/examples-antiddos-basic" {
-		t.Fatalf("got %q", got)
+	want := "gitbook-practice-synchronization/examples-antiddos-basic"
+	if got != want {
+		t.Fatalf("got %q want %q", got, want)
 	}
 }
 
@@ -42,7 +43,7 @@ func TestFilterOpenPRs_ServiceAndOnePerScan(t *testing.T) {
 				"number":   11,
 				"html_url": "https://github.com/Lance52259/hcbp-demo/pull/11",
 				"title":    "docs(dcs): support new best practice for redis account",
-				"head":     map[string]any{"ref": "doc-craft/examples-dcs-redis-account"},
+				"head":     map[string]any{"ref": "gitbook-practice-synchronization/examples-dcs-redis-account"},
 			},
 			{
 				"number":   99,
@@ -66,11 +67,11 @@ func TestFilterOpenPRs_ServiceAndOnePerScan(t *testing.T) {
 	prm.Client = srv.Client()
 
 	practices := []model.Practice{
-		{PracticeID: "examples/dcs/redis-all-sessions-kill"}, // blocked: service dcs has open PR
-		{PracticeID: "examples/dcs/redis-account"},           // blocked: exact head + service
-		{PracticeID: "examples/vpc/basic"},                   // keep
-		{PracticeID: "examples/vpc/peering"},                 // skip: same service in this scan
-		{PracticeID: "examples/ecs/basic"},                   // keep
+		{PracticeID: "examples/dcs/redis-all-sessions-kill"},
+		{PracticeID: "examples/dcs/redis-account"},
+		{PracticeID: "examples/vpc/basic"},
+		{PracticeID: "examples/vpc/peering"},
+		{PracticeID: "examples/ecs/basic"},
 	}
 	serviceOf := func(p model.Practice) string { return p.Service() }
 	keep, skipped, err := prm.FilterOpenPRs(practices, serviceOf)

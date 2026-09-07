@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Lance52259/doc-draft/internal/config"
-	"github.com/Lance52259/doc-draft/internal/model"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
 )
 
 var githubOwnerRepo = regexp.MustCompile(`(?i)github\.com[:/](.+?)/(.+?)(?:\.git)?$`)

@@ -1,5 +1,5 @@
 name: gitbook-practice-synchronization
-description: Detect new best practices and open AI-generated doc PRs (DeepSeek / Go). Skips services that already have an open tool PR (branch prefix doc-craft/); at most one practice per service per scan.
+description: Detect new best practices and open AI-generated doc PRs (DeepSeek / Go). Skips services that already have an open tool PR; at most one practice per service per scan.
 inputs:
   mode:
     description: "run | detect | generate"
@@ -24,7 +24,7 @@ runs:
     - name: Build
       shell: bash
       working-directory: ${{ github.action_path }}/../../..
-      run: go build -o bin/doc-craft ./cmd/doc-craft
+      run: go build -o bin/gitbook-practice-synchronization ./cmd/gitbook-practice-synchronization
     - name: Run
       shell: bash
       working-directory: ${{ github.action_path }}/../../..
@@ -39,4 +39,4 @@ runs:
         if [[ "${{ inputs.dry_run }}" == "true" ]]; then
           ARGS+=(--dry-run=true)
         fi
-        ./bin/doc-craft "${ARGS[@]}"
+        ./bin/gitbook-practice-synchronization "${ARGS[@]}"

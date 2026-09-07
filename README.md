@@ -2,11 +2,9 @@
 
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![CI](https://github.com/Lance52259/doc-draft/actions/workflows/test-workflow.yml/badge.svg)](https://github.com/Lance52259/doc-draft/actions/workflows/test-workflow.yml)
+[![CI](https://github.com/Lance52259/gitbook-practice-synchronization/actions/workflows/test-workflow.yml/badge.svg)](https://github.com/Lance52259/gitbook-practice-synchronization/actions/workflows/test-workflow.yml)
 
 从 [Huawei Cloud Terraform Provider](https://github.com/huaweicloud/terraform-provider-huaweicloud) 的 `examples/` 自动发现新增最佳实践，按 Skill 约束调用 DeepSeek 生成 **中英双语文档**，并向 GitBook 文档仓提交 Pull Request。
-
-> 本仓库 GitHub 名称为 `doc-draft`；项目对外描述与产品名为 **gitbook-practice-synchronization**。CLI 二进制仍为 `doc-craft`（入口 `cmd/doc-craft`）；向 C 仓推送的分支前缀仍为 `doc-craft/`（兼容已有 open PR）。
 
 ---
 
@@ -34,7 +32,7 @@
 
 | 角色 | 仓库 | 职责 |
 |------|------|------|
-| **A** | 本仓库（**gitbook-practice-synchronization** / GitHub: `doc-draft`） | CLI、Skill、映射、Actions |
+| **A** | 本仓库（**gitbook-practice-synchronization**） | CLI、Skill、映射、Actions |
 | **B** | [huaweicloud/terraform-provider-huaweicloud](https://github.com/huaweicloud/terraform-provider-huaweicloud) | `examples/` 最佳实践源 |
 | **C** | [Lance52259/hcbp-demo](https://github.com/Lance52259/hcbp-demo) | 中英文档与 PR 目标 |
 
@@ -43,7 +41,7 @@
 ## 功能特性
 
 - **增量探测**：对比 B 仓 `examples/` 与 C 仓已有文档（含服务别名、连字符/下划线模糊匹配）
-- **Open PR 跳过（按服务）**：扫描 C 仓本工具创建的 `doc-craft/...` 分支上的 open PR，解析标题中的 `docs({service})`；**该服务下所有未对接实践一律跳过**，直到 PR 合入后的下一次扫描。同一次扫描内每个服务最多处理 **1** 条实践，避免并行污染 `index.md` / `SUMMARY.md`
+- **Open PR 跳过（按服务）**：扫描 C 仓本工具创建的 `gitbook-practice-synchronization/...` 分支上的 open PR，解析标题中的 `docs({service})`；**该服务下所有未对接实践一律跳过**，直到 PR 合入后的下一次扫描。同一次扫描内每个服务最多处理 **1** 条实践，避免并行污染 `index.md` / `SUMMARY.md`
 - **干净基线生成**：每条实践 Generate / Apply 前将 C 工作树 `reset --hard` 到 `origin/$C_DEFAULT_BRANCH`，避免同一次 run 中上一条 PR 的导航残留写进下一条（跨服务污染）
 - **中英双语生成**：按 Skill 顺序产出 `docs/zh-cn/` 与 `docs/en-us/` 正文
 - **安全导航补丁**：`SUMMARY.md` / `index.md` / `README.md` 仅定点插入；英文侧先按字母序定目录，中文侧跟随；禁止整文件重写
@@ -92,8 +90,8 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/Lance52259/doc-draft.git
-cd doc-draft
+git clone https://github.com/Lance52259/gitbook-practice-synchronization.git
+cd gitbook-practice-synchronization
 
 cp .env.example .env
 # 编辑 .env：至少填写 AI_API_KEY；正式推 PR 还需 C_REPO_TOKEN
@@ -108,8 +106,8 @@ make dry-run         # 全流程 dry-run（不 push / 不开真实 PR）
 ```bash
 make run
 # 或
-./bin/doc-craft run
-./bin/doc-craft run --practice examples/ecs/basic
+./bin/gitbook-practice-synchronization run
+./bin/gitbook-practice-synchronization run --practice examples/ecs/basic
 ```
 
 ---
@@ -167,12 +165,10 @@ GitHub Actions：本仓库工作流使用 `environment: Development`，请在 **
 
 ## CLI 用法
 
-项目 CLI 二进制名为 **`doc-craft`**（`make build` → `./bin/doc-craft`）：
-
 ```bash
-doc-craft detect [--out new.json] [--no-refresh]
-doc-craft generate [--practice ID] [--practices-file FILE] [--dry-run]
-doc-craft run [--practice ID] [--dry-run=true|false] [--no-refresh]
+gitbook-practice-synchronization detect [--out new.json] [--no-refresh]
+gitbook-practice-synchronization generate [--practice ID] [--practices-file FILE] [--dry-run]
+gitbook-practice-synchronization run [--practice ID] [--dry-run=true|false] [--no-refresh]
 ```
 
 | 命令 | 说明 |
@@ -180,6 +176,8 @@ doc-craft run [--practice ID] [--dry-run=true|false] [--no-refresh]
 | `detect` | 输出 `new_practices` / `synced_ids` / `skipped_open_pr` |
 | `generate` | 仅生成（默认偏 dry-run 行为，见 flag） |
 | `run` | 探测 → 生成 → 推送 → 开 PR |
+
+构建产物：`make build` → `./bin/gitbook-practice-synchronization`。
 
 ---
 
@@ -209,24 +207,24 @@ Secrets / Variables 建议放在 **Environment `Development`**（工作流已声
 ## 项目结构
 
 ```text
-doc-draft/                          # GitHub 仓库目录名
+gitbook-practice-synchronization/
 ├── cmd/
-│   └── doc-craft/                  # CLI 入口（二进制名 doc-craft）
+│   └── gitbook-practice-synchronization/   # CLI 入口
 ├── internal/
-│   ├── monitor/                    # clone、探测、状态
-│   ├── mapping/                    # B → C 服务/实践映射
-│   ├── ai/                         # Skill、Prompt、生成
-│   │   └── provider/               # DeepSeek OpenAI Compatible
-│   ├── nav/                        # 中英 SUMMARY / index / README 手术式补丁
-│   ├── gitops/                     # commit、push、PR
-│   └── config/                     # .env + YAML
-├── configs/                        # default_config.yaml、practice_mapping.yaml
+│   ├── monitor/                            # clone、探测、状态
+│   ├── mapping/                            # B → C 服务/实践映射
+│   ├── ai/                                 # Skill、Prompt、生成
+│   │   └── provider/                       # DeepSeek OpenAI Compatible
+│   ├── nav/                                # 中英 SUMMARY / index / README 手术式补丁
+│   ├── gitops/                             # commit、push、PR
+│   └── config/                             # .env + YAML
+├── configs/                                # default_config.yaml、practice_mapping.yaml
 ├── skills/
-│   └── best-practice-doc/          # 文档生成 Skill
-├── templates/                      # 正文 / 分类 / PR body 模板
+│   └── best-practice-doc/                  # 文档生成 Skill
+├── templates/                              # 正文 / 分类 / PR body 模板
 └── .github/
-    ├── actions/doc-craft-action/   # composite action
-    └── workflows/                  # 定时生成 + 单元测试
+    ├── actions/gitbook-practice-synchronization-action/
+    └── workflows/                          # 定时生成 + 单元测试
 ```
 
 ---

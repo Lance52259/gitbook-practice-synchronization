@@ -3,7 +3,7 @@ package model_test
 import (
 	"testing"
 
-	"github.com/Lance52259/doc-draft/internal/model"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
 )
 
 func TestSimpleTitleAndCommitTitle(t *testing.T) {

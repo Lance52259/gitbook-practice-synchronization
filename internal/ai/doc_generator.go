@@ -9,11 +9,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Lance52259/doc-draft/internal/ai/provider"
-	"github.com/Lance52259/doc-draft/internal/config"
-	"github.com/Lance52259/doc-draft/internal/mapping"
-	"github.com/Lance52259/doc-draft/internal/model"
-	"github.com/Lance52259/doc-draft/internal/nav"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/ai/provider"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/config"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/mapping"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/model"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/nav"
 )
 
 var jsonFence = regexp.MustCompile("(?s)```(?:json)?\\s*\\n?(.*?)\\n?```")

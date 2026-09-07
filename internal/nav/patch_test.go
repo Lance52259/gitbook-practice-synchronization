@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Lance52259/doc-draft/internal/nav"
+	"github.com/Lance52259/gitbook-practice-synchronization/internal/nav"
 )
 
 const sampleSUMMARY = `# Summary
