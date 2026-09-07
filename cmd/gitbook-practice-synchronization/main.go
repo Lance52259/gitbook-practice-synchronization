@@ -52,8 +52,9 @@ Usage:
   gitbook-practice-synchronization run [--practice ID] [--dry-run] [--no-refresh]
 
 Env:
-  B_REPO          required, source examples repo (owner/name)
-  C_REPO          required, docs / PR target repo (owner/name)
+  B_REPO          required, source examples repo (owner/name or github URL)
+  C_REPO          required, docs / PR target repo (owner/name or github URL)
+  C_REPO_TOKEN    required when DRY_RUN=false (push + open PR)
   AI_API_KEY      if unset, generate/run skip AI work and exit 0 (pipeline green)
   MAX_PRACTICES   max new practices per run after filters (0 = unlimited)
 
@@ -67,7 +68,7 @@ Notes:
 // skipIfMissingAIKey prints a conspicuous notice and returns true when AI_API_KEY
 // is unset so callers can exit 0 without running generate/push/PR.
 func skipIfMissingAIKey(s *config.Settings) bool {
-	if strings.TrimSpace(s.AIAPIKey) != "" {
+	if s.HasAIAPIKey() {
 		return false
 	}
 	const line = "================================================================================"
@@ -80,6 +81,20 @@ func skipIfMissingAIKey(s *config.Settings) bool {
 	fmt.Println(line)
 	fmt.Println()
 	return true
+}
+
+// failMissingCRepoToken prints a conspicuous notice when push/PR token is missing.
+func failMissingCRepoToken(err error) {
+	const line = "================================================================================"
+	fmt.Println()
+	fmt.Println(line)
+	fmt.Println("【失败 / FAIL】未配置环境变量 C_REPO_TOKEN")
+	fmt.Println("  正式推送（DRY_RUN=false）需要写权限 token（Contents + Pull requests）")
+	fmt.Println("  已中止后续步骤，避免浪费 AI 调用后再在 push 阶段 403")
+	fmt.Println("  请在 Settings → Environments → Development → Secrets 配置 C_REPO_TOKEN")
+	fmt.Println("  详情:", err)
+	fmt.Println(line)
+	fmt.Println()
 }
 
 func loadSettings() *config.Settings {
@@ -137,12 +152,12 @@ func runGenerate(args []string) int {
 
 	s := loadSettings()
 	s.DryRun = *dryRun
-	if skipIfMissingAIKey(s) {
-		return 0
-	}
 	if err := s.RequireRepos(); err != nil {
 		log.Println(err)
 		return 1
+	}
+	if skipIfMissingAIKey(s) {
+		return 0
 	}
 
 	repoCtx, err := (&monitor.RepoWatcher{Settings: s}).PrepareRepos(true)
@@ -204,12 +219,18 @@ func runPipeline(args []string) int {
 	if *dryRunFlag != "" {
 		s.DryRun = strings.EqualFold(*dryRunFlag, "true") || *dryRunFlag == "1"
 	}
-	if skipIfMissingAIKey(s) {
-		return 0
-	}
 	if err := s.RequireRepos(); err != nil {
 		log.Println(err)
 		return 1
+	}
+	if !s.DryRun {
+		if err := s.RequireCRepoTokenForPush(); err != nil {
+			failMissingCRepoToken(err)
+			return 1
+		}
+	}
+	if skipIfMissingAIKey(s) {
+		return 0
 	}
 
 	repoCtx, err := (&monitor.RepoWatcher{Settings: s}).PrepareRepos(!*noRefresh)
@@ -291,17 +312,20 @@ func runPipeline(args []string) int {
 			continue
 		}
 
-		// Re-check immediately before generate (race with concurrent runs / prior opens)
+		// Re-check immediately before generate (race with concurrent runs / prior opens).
+		// Without C_REPO_TOKEN (dry-run), skip API lookup.
 		branch := gitops.PracticeBranch(item.PracticeID)
-		if existing, err := prm.FindOpenPR(branch); err != nil {
-			pipeline.Errors = append(pipeline.Errors, fmt.Sprintf("%s: %v", item.PracticeID, err))
-			continue
-		} else if existing != nil {
-			msg := fmt.Sprintf("%s: skip, open PR #%d %s (head %s)", item.PracticeID, existing.Number, existing.URL, branch)
-			pipeline.Skipped = append(pipeline.Skipped, msg)
-			state.OpenPRs[item.PracticeID] = existing.URL
-			openedServices[svc] = item.PracticeID
-			continue
+		if strings.TrimSpace(s.CRepoToken) != "" {
+			if existing, err := prm.FindOpenPR(branch); err != nil {
+				pipeline.Errors = append(pipeline.Errors, fmt.Sprintf("%s: %v", item.PracticeID, err))
+				continue
+			} else if existing != nil {
+				msg := fmt.Sprintf("%s: skip, open PR #%d %s (head %s)", item.PracticeID, existing.Number, existing.URL, branch)
+				pipeline.Skipped = append(pipeline.Skipped, msg)
+				state.OpenPRs[item.PracticeID] = existing.URL
+				openedServices[svc] = item.PracticeID
+				continue
+			}
 		}
 
 		// Always start Generate from a clean C base. After a prior ApplyAndPush in

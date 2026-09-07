@@ -114,6 +114,11 @@ func (m *PRManager) FindOpenPR(headBranch string) (*PullRequest, error) {
 }
 
 func (m *PRManager) CreatePR(title, body, head, base string, dryRun bool) (*PullRequest, error) {
+	// Dry-run without token: do not call GitHub API.
+	if dryRun && strings.TrimSpace(m.Settings.CRepoToken) == "" {
+		return &PullRequest{Number: 0, URL: "dry-run://pr", Title: title}, nil
+	}
+
 	existing, err := m.FindOpenPR(head)
 	if err != nil {
 		return nil, err

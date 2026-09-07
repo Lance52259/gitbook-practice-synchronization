@@ -130,7 +130,7 @@ GitHub Actions：本仓库工作流使用 `environment: Development`，请在 **
 
 | 变量 | 默认 | Actions 位置 | 说明 |
 |------|------|--------------|------|
-| `B_REPO` | —（**必填**） | **Secret**（`secrets.B_REPO`） | 源仓库 `owner/name`，无内置默认；如 `huaweicloud/terraform-provider-huaweicloud` |
+| `B_REPO` | —（**必填**） | **Secret**（`secrets.B_REPO`） | 源仓库 `owner/name` 或 github URL，无内置默认；如 `huaweicloud/terraform-provider-huaweicloud` |
 | `B_REPO_TOKEN` | _(空)_ | **Secret** | 读 B 仓；公开仓可省略 |
 | `B_EXAMPLES_PATH` | `examples` | **仅本地**（Actions 未单独注入） | examples 根路径 |
 | `B_DEFAULT_BRANCH` | `master` | **Variable**（`vars.B_DEFAULT_BRANCH`） | B 仓分支 |
@@ -139,8 +139,8 @@ GitHub Actions：本仓库工作流使用 `environment: Development`，请在 **
 
 | 变量 | 默认 | Actions 位置 | 说明 |
 |------|------|--------------|------|
-| `C_REPO` | —（**必填**） | **Secret**（`secrets.C_REPO`） | 文档 / PR 目标仓 `owner/name`，无内置默认；如 `chnsz/hcbp-demo` |
-| `C_REPO_TOKEN` | _(空)_ | **Secret**（必填，非 dry-run） | 写分支 + 开 PR |
+| `C_REPO` | —（**必填**） | **Secret**（`secrets.C_REPO`） | 文档 / PR 目标仓 `owner/name` 或 github URL，无内置默认；如 `chnsz/hcbp-demo` |
+| `C_REPO_TOKEN` | _(空)_ | **Secret**（**非 dry-run 启动时强制校验**） | 写分支 + 开 PR；缺省且 `DRY_RUN=false` 时醒目失败并 **exit 1**（避免先花 AI 再 403） |
 | `C_DOCS_ROOT` | `docs/zh-cn/best-practices` | **仅本地** | 中文文档根（探测用） |
 | `C_DEFAULT_BRANCH` | `master` | **Variable**（`vars.C_DEFAULT_BRANCH`） | PR base |
 | `C_SYNCED_MANIFEST` | `synced-practices.json` | **仅本地** | 可选已对接清单 |

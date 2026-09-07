@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -302,28 +303,25 @@ func applyEnv(s *Settings) {
 	set("PR_UPDATE_MODE", &s.PRUpdateMode)
 	set("LOG_LEVEL", &s.LogLevel)
 
-	if v := os.Getenv("AI_TIMEOUT_SECONDS"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			s.AITimeoutSeconds = n
+	setIntEnv := func(key string, dst *int) {
+		v := os.Getenv(key)
+		if v == "" {
+			return
 		}
-	}
-	if v := os.Getenv("AI_MAX_RETRIES"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			s.AIMaxRetries = n
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "warn: ignore invalid %s=%q (keep %d)\n", key, v, *dst)
+			return
 		}
+		*dst = n
 	}
-	if v := os.Getenv("AI_MAX_TOKENS"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			s.AIMaxTokens = n
-		}
-	}
+	setIntEnv("AI_TIMEOUT_SECONDS", &s.AITimeoutSeconds)
+	setIntEnv("AI_MAX_RETRIES", &s.AIMaxRetries)
+	setIntEnv("AI_MAX_TOKENS", &s.AIMaxTokens)
+	setIntEnv("MAX_PRACTICES", &s.MaxPractices)
+
 	if v := os.Getenv("DRY_RUN"); v != "" {
 		s.DryRun = parseBool(v)
-	}
-	if v := os.Getenv("MAX_PRACTICES"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			s.MaxPractices = n
-		}
 	}
 }
 
@@ -334,6 +332,26 @@ func parseBool(v string) bool {
 	default:
 		return false
 	}
+}
+
+var (
+	ownerNameRe = regexp.MustCompile(`^[\w.-]+/[\w.-]+$`)
+	githubURLRe = regexp.MustCompile(`(?i)(?:https?://)?github\.com[:/]([\w.-]+)/([\w.-]+?)(?:\.git)?/?$`)
+)
+
+// ValidateRepoRef accepts owner/name or a github.com URL.
+func ValidateRepoRef(repo string) error {
+	value := strings.TrimSpace(repo)
+	if value == "" {
+		return fmt.Errorf("empty repository reference")
+	}
+	if ownerNameRe.MatchString(value) {
+		return nil
+	}
+	if githubURLRe.MatchString(value) {
+		return nil
+	}
+	return fmt.Errorf("invalid repository %q (want owner/name or github.com URL)", repo)
 }
 
 func (s *Settings) RequireRepos() error {
@@ -348,14 +366,25 @@ func (s *Settings) RequireRepos() error {
 	if len(missing) > 0 {
 		return fmt.Errorf("missing required environment variables: %s (owner/name, no built-in default)", strings.Join(missing, ", "))
 	}
+	if err := ValidateRepoRef(s.BRepo); err != nil {
+		return fmt.Errorf("B_REPO: %w", err)
+	}
+	if err := ValidateRepoRef(s.CRepo); err != nil {
+		return fmt.Errorf("C_REPO: %w", err)
+	}
 	return nil
 }
 
-func (s *Settings) RequireAI() error {
-	if s.AIAPIKey == "" {
-		return fmt.Errorf("missing required setting: AI_API_KEY")
+// RequireCRepoTokenForPush requires C_REPO_TOKEN when not in dry-run (push / open PR).
+func (s *Settings) RequireCRepoTokenForPush() error {
+	if strings.TrimSpace(s.CRepoToken) == "" {
+		return fmt.Errorf("missing required environment variable: C_REPO_TOKEN (required when DRY_RUN is false)")
 	}
 	return nil
+}
+
+func (s *Settings) HasAIAPIKey() bool {
+	return strings.TrimSpace(s.AIAPIKey) != ""
 }
 
 func (s *Settings) AbsoluteStatePath() string {

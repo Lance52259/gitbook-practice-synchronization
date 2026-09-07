@@ -96,3 +96,20 @@ func TestFilterOpenPRs_ServiceAndOnePerScan(t *testing.T) {
 		}
 	}
 }
+
+func TestCreatePR_DryRunWithoutToken(t *testing.T) {
+	prm, err := gitops.NewPRManager(&config.Settings{
+		CRepo:      "chnsz/hcbp-demo",
+		CRepoToken: "",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pr, err := prm.CreatePR("docs(ecs): x", "body", "branch", "master", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pr == nil || pr.URL != "dry-run://pr" {
+		t.Fatalf("got %+v", pr)
+	}
+}
