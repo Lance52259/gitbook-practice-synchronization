@@ -42,6 +42,7 @@
 
 - **增量探测**：对比 B 仓 `examples/` 与 C 仓已有文档（含服务别名、连字符/下划线模糊匹配）
 - **Open PR 跳过（按服务）**：扫描 C 仓 `doc-craft/...` 的 open PR，解析标题中的 `docs({service})`；**该服务下所有未对接实践一律跳过**，直到 PR 合入后的下一次扫描。同一次扫描内每个服务最多处理 **1** 条实践，避免并行污染 `index.md` / `SUMMARY.md`
+- **干净基线生成**：每条实践 Generate / Apply 前将 C 工作树 `reset --hard` 到 `origin/$C_DEFAULT_BRANCH`，避免同一次 run 中上一条 PR 的导航残留写进下一条（跨服务污染）
 - **中英双语生成**：按 Skill 顺序产出 `docs/zh-cn/` 与 `docs/en-us/` 正文
 - **安全导航补丁**：`SUMMARY.md` / `index.md` / `README.md` 仅定点插入；英文侧先按字母序定目录，中文侧跟随；禁止整文件重写
 - **一实践一 PR**：提交信息与 PR 标题统一为 `docs({service}): support new best practice for {title}`
@@ -71,7 +72,7 @@
 
 1. 拉取 B / C 工作树  
 2. 枚举 examples，过滤已对接文档；按 open PR **所属服务**跳过，且每服务每轮最多 1 条
-3. 按 `MAX_PRACTICES` 限流后调用 AI 生成  
+3. 按 `MAX_PRACTICES` 限流后调用 AI 生成（每条前复位 C 工作树到干净 base）  
 4. 编排层补丁中英导航文件  
 5. 推送分支并创建 PR（非 dry-run）
 

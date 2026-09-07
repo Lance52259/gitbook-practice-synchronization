@@ -152,7 +152,12 @@ func runGenerate(args []string) int {
 
 	p := provider.NewDeepSeek(s.AIAPIKey, s.AIBaseURL, s.AIModel, s.AITimeoutSeconds, s.AIMaxRetries, s.AIMaxTokens)
 	gen := ai.NewDocGenerator(s, p)
+	op := &gitops.RepoOperator{Settings: s}
 	for _, item := range selected {
+		if err := op.ResetToBase(repoCtx.C.LocalPath, s.CDefaultBranch); err != nil {
+			log.Printf("reset C before %s: %v", item.PracticeID, err)
+			return 1
+		}
 		dir := filepath.Join(repoCtx.B.LocalPath, item.SourcePath)
 		result, err := gen.Generate(context.Background(), item, dir, repoCtx.C.LocalPath)
 		if err != nil {
@@ -276,6 +281,14 @@ func runPipeline(args []string) int {
 			pipeline.Skipped = append(pipeline.Skipped, msg)
 			state.OpenPRs[item.PracticeID] = existing.URL
 			openedServices[svc] = item.PracticeID
+			continue
+		}
+
+		// Always start Generate from a clean C base. After a prior ApplyAndPush in
+		// this run the worktree sits on that practice branch; reading SUMMARY/index
+		// from there would bake sibling-service nav into this PR (see hcbp-demo#18).
+		if err := op.ResetToBase(repoCtx.C.LocalPath, s.CDefaultBranch); err != nil {
+			pipeline.Errors = append(pipeline.Errors, fmt.Sprintf("%s reset C: %v", item.PracticeID, err))
 			continue
 		}
 

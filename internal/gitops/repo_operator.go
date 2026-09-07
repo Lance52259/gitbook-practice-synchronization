@@ -1,6 +1,7 @@
 package gitops
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,14 +17,33 @@ type RepoOperator struct {
 	Settings *config.Settings
 }
 
-func (o *RepoOperator) ApplyAndPush(repoPath, branchName, baseBranch string, result *model.GenerateResult, commitMessage string, dryRun bool) (string, error) {
+// ResetToBase checkouts baseBranch and hard-resets to origin/baseBranch.
+// Must run before Generate so nav.ApplyToFiles reads a clean master baseline;
+// otherwise a prior practice's branch (same Actions run) contaminates SUMMARY/index.
+func (o *RepoOperator) ResetToBase(repoPath, baseBranch string) error {
+	if strings.TrimSpace(baseBranch) == "" {
+		return fmt.Errorf("base branch is required")
+	}
 	if err := run(repoPath, "git", "fetch", "origin"); err != nil {
-		return "", err
+		return fmt.Errorf("fetch origin: %w", err)
 	}
 	if err := run(repoPath, "git", "checkout", baseBranch); err != nil {
+		return fmt.Errorf("checkout %s: %w", baseBranch, err)
+	}
+	ref := "origin/" + baseBranch
+	if err := run(repoPath, "git", "reset", "--hard", ref); err != nil {
+		return fmt.Errorf("reset --hard %s: %w", ref, err)
+	}
+	if err := run(repoPath, "git", "clean", "-fd"); err != nil {
+		return fmt.Errorf("clean -fd: %w", err)
+	}
+	return nil
+}
+
+func (o *RepoOperator) ApplyAndPush(repoPath, branchName, baseBranch string, result *model.GenerateResult, commitMessage string, dryRun bool) (string, error) {
+	if err := o.ResetToBase(repoPath, baseBranch); err != nil {
 		return "", err
 	}
-	_ = run(repoPath, "git", "pull", "origin", baseBranch)
 
 	// -B: create or reset branch from current HEAD (avoids noisy "branch not found" from -D)
 	if err := run(repoPath, "git", "checkout", "-B", branchName); err != nil {
