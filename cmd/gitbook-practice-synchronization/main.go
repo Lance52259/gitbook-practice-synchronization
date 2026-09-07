@@ -54,6 +54,7 @@ Usage:
 Env:
   B_REPO          required, source examples repo (owner/name)
   C_REPO          required, docs / PR target repo (owner/name)
+  AI_API_KEY      if unset, generate/run skip AI work and exit 0 (pipeline green)
   MAX_PRACTICES   max new practices per run after filters (0 = unlimited)
 
 Notes:
@@ -61,6 +62,24 @@ Notes:
   their entire docs({service}); at most one practice per service is processed
   per scan until that PR is merged.
 `)
+}
+
+// skipIfMissingAIKey prints a conspicuous notice and returns true when AI_API_KEY
+// is unset so callers can exit 0 without running generate/push/PR.
+func skipIfMissingAIKey(s *config.Settings) bool {
+	if strings.TrimSpace(s.AIAPIKey) != "" {
+		return false
+	}
+	const line = "================================================================================"
+	fmt.Println()
+	fmt.Println(line)
+	fmt.Println("【跳过 / SKIP】未配置环境变量 AI_API_KEY")
+	fmt.Println("  已跳过后续：仓库拉取、探测、AI 生成、push、开 PR")
+	fmt.Println("  流水线按成功完成标记（exit code 0），避免 Actions 变红")
+	fmt.Println("  请在 Settings → Environments → Development → Secrets 配置 AI_API_KEY 后重跑")
+	fmt.Println(line)
+	fmt.Println()
+	return true
 }
 
 func loadSettings() *config.Settings {
@@ -118,11 +137,10 @@ func runGenerate(args []string) int {
 
 	s := loadSettings()
 	s.DryRun = *dryRun
-	if err := s.RequireRepos(); err != nil {
-		log.Println(err)
-		return 1
+	if skipIfMissingAIKey(s) {
+		return 0
 	}
-	if err := s.RequireAI(); err != nil {
+	if err := s.RequireRepos(); err != nil {
 		log.Println(err)
 		return 1
 	}
@@ -186,6 +204,9 @@ func runPipeline(args []string) int {
 	if *dryRunFlag != "" {
 		s.DryRun = strings.EqualFold(*dryRunFlag, "true") || *dryRunFlag == "1"
 	}
+	if skipIfMissingAIKey(s) {
+		return 0
+	}
 	if err := s.RequireRepos(); err != nil {
 		log.Println(err)
 		return 1
@@ -240,10 +261,6 @@ func runPipeline(args []string) int {
 		return 0
 	}
 	selected = limitPractices(selected, s.MaxPractices)
-	if err := s.RequireAI(); err != nil {
-		log.Println(err)
-		return 1
-	}
 
 	p := provider.NewDeepSeek(s.AIAPIKey, s.AIBaseURL, s.AIModel, s.AITimeoutSeconds, s.AIMaxRetries, s.AIMaxTokens)
 	gen := ai.NewDocGenerator(s, p)
