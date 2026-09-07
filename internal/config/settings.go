@@ -49,6 +49,10 @@ type Settings struct {
 	LogLevel     string
 	// MaxPractices limits how many new practices are processed per run; 0 = unlimited.
 	MaxPractices int
+	// PRChecksWaitSeconds is how long to wait for the previous PR's CI before the next practice (0 disables wait).
+	PRChecksWaitSeconds int
+	// PRChecksPollSeconds is the polling interval while waiting for CI.
+	PRChecksPollSeconds int
 
 	SyncedStrategy string
 	Granularity    string
@@ -174,11 +178,13 @@ func Load() (*Settings, error) {
 		SkillRoot:          "skills",
 		StatePath:          "state/state.json",
 		WorkDir:            ".work",
-		PRMode:             "one_per_practice",
-		PRUpdateMode:       "skip",
-		LogLevel:           "INFO",
-		SyncedStrategy:     "hybrid",
-		Granularity:        "nested_directory",
+		PRMode:              "one_per_practice",
+		PRUpdateMode:        "skip",
+		LogLevel:            "INFO",
+		PRChecksWaitSeconds: 120,
+		PRChecksPollSeconds: 10,
+		SyncedStrategy:      "hybrid",
+		Granularity:         "nested_directory",
 	}
 
 	cfgPath := filepath.Join(root, "configs", "default_config.yaml")
@@ -319,6 +325,8 @@ func applyEnv(s *Settings) {
 	setIntEnv("AI_MAX_RETRIES", &s.AIMaxRetries)
 	setIntEnv("AI_MAX_TOKENS", &s.AIMaxTokens)
 	setIntEnv("MAX_PRACTICES", &s.MaxPractices)
+	setIntEnv("PR_CHECKS_WAIT_SECONDS", &s.PRChecksWaitSeconds)
+	setIntEnv("PR_CHECKS_POLL_SECONDS", &s.PRChecksPollSeconds)
 
 	if v := os.Getenv("DRY_RUN"); v != "" {
 		s.DryRun = parseBool(v)

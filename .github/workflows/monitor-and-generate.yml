@@ -49,6 +49,9 @@ jobs:
           SKILL_ID: ${{ vars.SKILL_ID || 'best-practice-doc' }}
           # 单次最多处理条数；Environment Variable / Repo Variable 均可；0=不限制
           MAX_PRACTICES: ${{ vars.MAX_PRACTICES || '1' }}
+          # 开完一条 PR 后等待其 CI 再处理下一条；默认 120s，超时则跳过后续
+          PR_CHECKS_WAIT_SECONDS: ${{ vars.PR_CHECKS_WAIT_SECONDS || '120' }}
+          PR_CHECKS_POLL_SECONDS: ${{ vars.PR_CHECKS_POLL_SECONDS || '10' }}
 
       - name: Upload AI failure dumps
         if: always()

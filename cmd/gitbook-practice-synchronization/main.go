@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/chnsz/gitbook-practice-synchronization/internal/ai"
 	"github.com/chnsz/gitbook-practice-synchronization/internal/ai/provider"
@@ -52,11 +53,12 @@ Usage:
   gitbook-practice-synchronization run [--practice ID] [--dry-run] [--no-refresh]
 
 Env:
-  B_REPO          required, source examples repo (owner/name or github URL)
-  C_REPO          required, docs / PR target repo (owner/name or github URL)
-  C_REPO_TOKEN    required when DRY_RUN=false (push + open PR)
-  AI_API_KEY      if unset, generate/run skip AI work and exit 0 (pipeline green)
-  MAX_PRACTICES   max new practices per run after filters (0 = unlimited)
+  B_REPO                  required, source examples repo (owner/name or github URL)
+  C_REPO                  required, docs / PR target repo (owner/name or github URL)
+  C_REPO_TOKEN            required when DRY_RUN=false (push + open PR)
+  AI_API_KEY              if unset, generate/run skip AI work and exit 0 (pipeline green)
+  PR_CHECKS_WAIT_SECONDS  wait for previous PR CI before next practice (default 120; 0=disable)
+  MAX_PRACTICES           max new practices per run after filters (0 = unlimited)
 
 Notes:
   Open tool PRs on C (branch prefix gitbook-practice-synchronization/) block
@@ -297,7 +299,7 @@ func runPipeline(args []string) int {
 	resolver := mapping.NewResolver(s.Mapping, s.CDocsRoot)
 	openedServices := map[string]string{} // service → practice_id opened/kept this run
 
-	for _, item := range selected {
+	for idx, item := range selected {
 		doc := resolver.Resolve(item)
 		svc := strings.ToLower(strings.TrimSpace(doc.Service))
 		if svc == "" {
@@ -373,6 +375,13 @@ func runPipeline(args []string) int {
 		openedServices[svc] = item.PracticeID
 		if !contains(state.ProcessedPractices, item.PracticeID) {
 			state.ProcessedPractices = append(state.ProcessedPractices, item.PracticeID)
+		}
+
+		// Strategy 1: before the next practice, wait for this PR's CI (max PR_CHECKS_WAIT_SECONDS).
+		if shouldWaitForPrevPRChecks(s, pr, idx, len(selected)) {
+			if stop := waitAndMaybeSkipRest(prm, s, pr, item.PracticeID, selected[idx+1:], &pipeline); stop {
+				break
+			}
 		}
 	}
 
@@ -505,6 +514,93 @@ func aiProviderLabel(modelName string) string {
 	default:
 		return modelName
 	}
+}
+
+func shouldWaitForPrevPRChecks(s *config.Settings, pr *gitops.PullRequest, idx, total int) bool {
+	if s.DryRun || s.PRChecksWaitSeconds <= 0 {
+		return false
+	}
+	if pr == nil || pr.Number <= 0 {
+		return false
+	}
+	if idx >= total-1 {
+		return false
+	}
+	return strings.TrimSpace(s.CRepoToken) != ""
+}
+
+// waitAndMaybeSkipRest waits for pr CI; on non-success skips remaining practices and returns true to stop the loop.
+func waitAndMaybeSkipRest(prm *gitops.PRManager, s *config.Settings, pr *gitops.PullRequest, openedPracticeID string, remaining []model.Practice, pipeline *model.PipelineResult) bool {
+	if len(remaining) == 0 {
+		return false
+	}
+	wait := time.Duration(s.PRChecksWaitSeconds) * time.Second
+	poll := time.Duration(s.PRChecksPollSeconds) * time.Second
+	if poll <= 0 {
+		poll = 10 * time.Second
+	}
+	const line = "================================================================================"
+	fmt.Println()
+	fmt.Println(line)
+	fmt.Printf("【等待 / WAIT】PR #%d（实践 %s）CI 检查，最长 %s，再处理后续 %d 条\n",
+		pr.Number, openedPracticeID, wait, len(remaining))
+	fmt.Printf("  PR: %s\n", pr.URL)
+	fmt.Println(line)
+
+	st, ok, err := prm.WaitPRChecks(pr.Number, wait, poll, nil)
+	if err != nil {
+		fmt.Println()
+		fmt.Println(line)
+		fmt.Printf("【跳过后续 / SKIP REST】查询 PR #%d CI 失败: %v\n", pr.Number, err)
+		fmt.Printf("  上一实践: %s\n", openedPracticeID)
+		fmt.Printf("  最后状态: outcome=%s sha=%s summary=%s\n", st.Outcome, st.SHA, st.Summary)
+		for _, d := range st.Details {
+			fmt.Printf("    - %s\n", d)
+		}
+		fmt.Println(line)
+		fmt.Println()
+		pipeline.Errors = append(pipeline.Errors, fmt.Sprintf("PR #%d checks poll: %v", pr.Number, err))
+		for _, r := range remaining {
+			msg := fmt.Sprintf("%s: skip remaining, previous PR #%d checks could not be polled (%v)", r.PracticeID, pr.Number, err)
+			pipeline.Skipped = append(pipeline.Skipped, msg)
+		}
+		return true
+	}
+	if ok && st.Outcome == gitops.ChecksSuccess {
+		fmt.Println()
+		fmt.Println(line)
+		fmt.Printf("【继续 / CONTINUE】PR #%d CI 已通过，处理后续实践\n", pr.Number)
+		fmt.Printf("  %s\n", st.Summary)
+		fmt.Println(line)
+		fmt.Println()
+		return false
+	}
+
+	fmt.Println()
+	fmt.Println(line)
+	fmt.Printf("【跳过后续 / SKIP REST】上一 PR #%d CI 未在 %s 内通过\n", pr.Number, wait)
+	fmt.Printf("  上一实践: %s\n", openedPracticeID)
+	fmt.Printf("  PR: %s\n", pr.URL)
+	fmt.Printf("  状态: outcome=%s sha=%s\n", st.Outcome, st.SHA)
+	fmt.Printf("  摘要: %s\n", st.Summary)
+	for _, d := range st.Details {
+		fmt.Printf("    - %s\n", d)
+	}
+	fmt.Printf("  将跳过后续 %d 条最佳实践（本轮不再生成/推送）\n", len(remaining))
+	fmt.Println(line)
+	fmt.Println()
+
+	reason := "still pending after wait"
+	if st.Outcome == gitops.ChecksFailure {
+		reason = "checks failed"
+		pipeline.Errors = append(pipeline.Errors, fmt.Sprintf("PR #%d %s: %s", pr.Number, reason, st.Summary))
+	}
+	for _, r := range remaining {
+		msg := fmt.Sprintf("%s: skip remaining, previous PR #%d (%s) %s — %s",
+			r.PracticeID, pr.Number, openedPracticeID, reason, st.Summary)
+		pipeline.Skipped = append(pipeline.Skipped, msg)
+	}
+	return true
 }
 
 func contains(list []string, v string) bool {

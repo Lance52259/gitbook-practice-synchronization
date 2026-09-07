@@ -46,6 +46,7 @@
 - **中英双语生成**：按 Skill 顺序产出 `docs/zh-cn/` 与 `docs/en-us/` 正文
 - **安全导航补丁**：`SUMMARY.md` / `index.md` / `README.md` 仅定点插入；英文侧先按字母序定目录，中文侧跟随；禁止整文件重写
 - **一实践一 PR**：提交信息与 PR 标题统一为 `docs({service}): support new best practice for {title}`
+- **串行等 CI**：同一次 run 中，上一条 PR 开出后最多等待 `PR_CHECKS_WAIT_SECONDS`（默认 120s）检查 Checks/Statuses；通过后再处理下一条；超时或失败则醒目日志并跳过本轮后续全部实践
 - **本地 Dry-run**：不 push、不开真实 PR，便于联调
 - **定时 + 手动**：GitHub Actions 支持 schedule 与 `workflow_dispatch`
 
@@ -155,6 +156,8 @@ GitHub Actions：本仓库工作流使用 `environment: Development`，请在 **
 | `AI_MAX_TOKENS` | `300000` | **Variable**（`vars.AI_MAX_TOKENS`） | 单次完成最大 token；双语文档建议拉高。DeepSeek V4 输出硬上限约 384000 |
 | `AI_TIMEOUT_SECONDS` | `300` | **Variable**（`vars.AI_TIMEOUT_SECONDS`） | 请求超时（秒）；拉高 max_tokens 后建议同步加大 |
 | `DRY_RUN` | `false` | workflow 输入 / 本地 `.env` | `true` 时不 push / 不开真实 PR |
+| `PR_CHECKS_WAIT_SECONDS` | `120` | **Variable**（`vars.PR_CHECKS_WAIT_SECONDS`） | 同一次 run 中，开完一条 PR 后等待其 CI 的最长时间（秒）；超时或失败则**跳过后续所有实践**并醒目打日志；`0` 关闭等待 |
+| `PR_CHECKS_POLL_SECONDS` | `10` | **Variable**（可选） | CI 轮询间隔（秒） |
 | `MAX_PRACTICES` | 本地 `0`（不限制）；Actions 未配置时回退 `1` | **Variable**（`vars.MAX_PRACTICES`） | 过滤后单次最多处理条数（先按服务跳过 open PR，再每服务留 1 条，最后才截断）。**必须配在 Variables，不要放进 Secrets**；放错则 `vars` 读不到，会一直用默认 `1` |
 | `SKILL_ID` | `best-practice-doc` | **Variable**（`vars.SKILL_ID`） | Skill 目录名 |
 
@@ -194,10 +197,10 @@ Secrets / Variables 建议放在 **Environment `Development`**（工作流已声
 
 | 类型 | 配置项 |
 |------|--------|
-| **Secrets（必填）** | `B_REPO`、`C_REPO`、`C_REPO_TOKEN` |
+| **Secrets（必填）** | `B_REPO`、`C_REPO`、`C_REPO_TOKEN`（建议 Fine-grained 含 Contents/PR 写；若启用 CI 等待再加 **Checks: Read**、**Commit statuses: Read**） |
 | **Secrets（生成用）** | `AI_API_KEY`（未配置时流水线跳过生成并以成功结束） |
 | **Secrets（可选）** | `B_REPO_TOKEN` |
-| **Variables（可选）** | `MAX_PRACTICES`、`B_DEFAULT_BRANCH`、`C_DEFAULT_BRANCH`、`AI_BASE_URL`、`AI_MODEL`、`AI_MAX_TOKENS`、`AI_TIMEOUT_SECONDS`、`SKILL_ID` |
+| **Variables（可选）** | `MAX_PRACTICES`、`PR_CHECKS_WAIT_SECONDS`、`PR_CHECKS_POLL_SECONDS`、`B_DEFAULT_BRANCH`、`C_DEFAULT_BRANCH`、`AI_BASE_URL`、`AI_MODEL`、`AI_MAX_TOKENS`、`AI_TIMEOUT_SECONDS`、`SKILL_ID` |
 
 `MAX_PRACTICES` 等非敏感项请放 **Variables**；若放进 Secrets，工作流的 `vars.MAX_PRACTICES` 读不到，会回退为 `1`。
 
