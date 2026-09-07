@@ -149,7 +149,7 @@ GitHub Actions：本仓库工作流使用 `environment: Development`，请在 **
 
 | 变量 | 默认 | Actions 位置 | 说明 |
 |------|------|--------------|------|
-| `AI_API_KEY` | — | **Secret**（必填） | DeepSeek API Key |
+| `AI_API_KEY` | — | **Secret**（生成必填；缺省时 `run`/`generate` 醒目跳过并 **exit 0**） | DeepSeek API Key |
 | `AI_BASE_URL` | `https://api.deepseek.com` | **Variable**（`vars.AI_BASE_URL`） | API 地址 |
 | `AI_MODEL` | `deepseek-chat` | **Variable**（`vars.AI_MODEL`） | 模型名 |
 | `AI_MAX_TOKENS` | `300000` | **Variable**（`vars.AI_MAX_TOKENS`） | 单次完成最大 token；双语文档建议拉高。DeepSeek V4 输出硬上限约 384000 |
@@ -194,7 +194,8 @@ Secrets / Variables 建议放在 **Environment `Development`**（工作流已声
 
 | 类型 | 配置项 |
 |------|--------|
-| **Secrets（必填）** | `B_REPO`、`C_REPO`、`AI_API_KEY`、`C_REPO_TOKEN` |
+| **Secrets（必填）** | `B_REPO`、`C_REPO`、`C_REPO_TOKEN` |
+| **Secrets（生成用）** | `AI_API_KEY`（未配置时流水线跳过生成并以成功结束） |
 | **Secrets（可选）** | `B_REPO_TOKEN` |
 | **Variables（可选）** | `MAX_PRACTICES`、`B_DEFAULT_BRANCH`、`C_DEFAULT_BRANCH`、`AI_BASE_URL`、`AI_MODEL`、`AI_MAX_TOKENS`、`AI_TIMEOUT_SECONDS`、`SKILL_ID` |
 
