@@ -108,6 +108,37 @@ func TestPatchSUMMARYByEnglishTitleNotFilename(t *testing.T) {
 	if account < 0 || bg < 0 || inst < 0 || !(account < bg && bg < inst) {
 		t.Fatalf("want Account < Background < Instance by English title:\n%s", got)
 	}
+	intro := strings.Index(got, "best-practices/dcs/index.md")
+	if intro < 0 || !(intro < account) {
+		t.Fatalf("Introduction must stay above practices:\n%s", got)
+	}
+}
+
+// Title sort must never move Introduction / index.md below Deploy* practices (PR #209).
+func TestPatchSUMMARYKeepsIntroductionFirst(t *testing.T) {
+	base := `# Summary
+
+* [Best Practices](best-practices/)
+  * [Introduction](best-practices/README.md)
+  * [DCS](best-practices/dcs/)
+    * [Introduction](best-practices/dcs/index.md)
+    * [Deploy Redis Account Management](best-practices/dcs/redis_account.md)
+    * [Deploy Redis Instance All Sessions Kill](best-practices/dcs/redis_all_sessions_kill.md)
+    * [Deploy Single-Node Redis Instance](best-practices/dcs/redis_single_instance.md)
+`
+	got, err := nav.PatchSUMMARY(base, "dcs", "DCS", "redis_background_task_delete", "Deploy Redis Background Task Delete", nav.EnUS.IntroLabel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := strings.Index(got, "  * [DCS](best-practices/dcs/)")
+	intro := strings.Index(got, "[Introduction](best-practices/dcs/index.md)")
+	firstPractice := strings.Index(got, "redis_account.md")
+	if svc < 0 || intro < 0 || firstPractice < 0 || !(svc < intro && intro < firstPractice) {
+		t.Fatalf("want DCS → Introduction → practices:\n%s", got)
+	}
+	if strings.Count(got, "best-practices/dcs/index.md") != 1 {
+		t.Fatalf("Introduction duplicated:\n%s", got)
+	}
 }
 
 func TestPatchSUMMARYFollowOrderForZH(t *testing.T) {

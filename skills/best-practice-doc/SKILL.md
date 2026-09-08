@@ -31,7 +31,7 @@ B/C 的 owner/name、默认分支均以**当前运行配置为准**，本文件�
 | **2** | **create** | `docs/en-us/best-practices/{service}/{practice}.md` | 英文版最佳实践正文（与中文同一 `{service}/{practice}`） |
 | **3** | **create** 或 **update** | `docs/en-us/best-practices/{service}/index.md` | 英文分类页：**新建**须按「分类 index.md 规范」写满（对齐 Anti-DDoS，禁止精简版）；已存在则只在 Best Practices List 按 **英文实践标题（H1）字母序** 插入本条（含一句话说明） |
 | **4** | **update** | `docs/en-us/best-practices/README.md` | 英文文档导航：按服务目录名字母序插入；**标题与简介必须从英文 `index.md` 截取**（规则见「README 导航条目规范」）。禁止占位句。新服务必做；已有服务仅新增实践时可跳过 |
-| **5** | **update** | `docs/en-us/SUMMARY.md` | 英文 TOC：**一定存在**，只定点插入。已有服务 → 在该服务块内按 **英文实践标题（H1）字母序** 插入实践链接；**新增服务** → 再按服务目录名字母序插入「服务节点 + Introduction + 本实践」 |
+| **5** | **update** | `docs/en-us/SUMMARY.md` | 英文 TOC：**一定存在**，只定点插入。已有服务 → 在该服务块内按 **英文实践标题（H1）字母序** 插入实践链接（**Introduction/`index.md` 始终置顶，不参与排序**）；**新增服务** → 再按服务目录名字母序插入「服务节点 + Introduction + 本实践」 |
 | **6** | **create** 或 **update** | `docs/zh-cn/best-practices/{service}/index.md` | 中文分类页：**新建**须按「分类 index.md 规范」写满（与英文同等篇幅）；已存在则只追加列表项。**列表顺序与英文 index 一致**（同一 `{practice}.md` 顺序） |
 | **7** | **update** | `docs/zh-cn/best-practices/README.md` | 中文文档导航：顺序跟随英文；**标题与简介必须从中文 `index.md` 截取**（规则见下节「README 导航条目规范」）。禁止占位句。新服务必做；已有服务仅新增实践时可跳过 |
 | **8** | **update** | `docs/zh-cn/SUMMARY.md` | 中文 TOC：**一定存在**，只定点插入。结构/相对位置与英文 SUMMARY **对齐**（同一 `{service}/{practice}` 链接路径顺序；**新增服务**时同步插入服务块） |
@@ -39,7 +39,8 @@ B/C 的 owner/name、默认分支均以**当前运行配置为准**，本文件�
 ### 顺序与排序原则
 
 1. **英文先定序**：同一服务下的实践，在 index / SUMMARY 中按 **英文标题（与 H1 一致）大小写不敏感字母序** 排列；服务节点仍按 `{service}` 目录名字母序。不要按 `{practice}.md` 文件名排序（例如 `Deploy Redis Account` 应在 `Deploy Redis Background…` 之前、`Deploy Redis Instance…` 之前，即使文件名是 `redis_all_sessions_kill.md`）。  
-2. **中文跟随**：中文 index 列表、README 服务块、SUMMARY 服务块与实践行的相对顺序，与英文侧 **实践文件路径顺序** 保持一致；不要用中文标题拼音或汉字顺序重排。  
+   **例外**：各服务块内的 **Introduction / 简介（`index.md`）始终固定在该服务下第一项**，不参与标题字母序重排。  
+2. **中文跟随**：中文 index 列表、README 服务块、SUMMARY 服务块与实践行的相对顺序，与英文侧 **实践文件路径顺序** 保持一致；不要用中文标题拼音或汉字顺序重排。Introduction / 简介同样固定在服务块顶端。  
 3. **双语路径对称**：中英文使用相同的 `{service}`、`{practice}` 文件名；仅标题与正文语言不同。
 
 ### 命名约定
