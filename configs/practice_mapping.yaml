@@ -65,5 +65,9 @@ practice_aliases:
   cce/kubenetes/pvc-with-existing-obs-bucket: kubernetes_pvc_with_existing_obs
   examples/cce/kubenetes/pvc-with-new-obs-bucket: kubernetes_pvc_with_new_obs
   cce/kubenetes/pvc-with-new-obs-bucket: kubernetes_pvc_with_new_obs
+  # B folder keeps product code (kps-keypair); C doc is keypair.md (H1: Deploy Keypair)
+  examples/dew/kps-keypair: keypair
+  dew/kps-keypair: keypair
+  kps-keypair: keypair
 
 rules: []

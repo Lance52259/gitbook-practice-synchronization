@@ -70,6 +70,63 @@ func TestIsSyncedFuzzyIndex(t *testing.T) {
 	}
 }
 
+// PR #208 regression: examples/dew/kps-keypair must map to existing dew/keypair.md
+// (H1 Deploy Keypair), not create kps_keypair.md / key_pair.md.
+func TestIsSyncedKpsKeypairMatchesKeypair(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "docs", "zh-cn", "best-practices", "dew")
+	if err := mkdirWrite(dir, "keypair.md", "# Deploy Keypair\n"); err != nil {
+		t.Fatal(err)
+	}
+	if err := mkdirWrite(dir, "kms_key.md", "# Deploy KMS Key\n"); err != nil {
+		t.Fatal(err)
+	}
+
+	r := NewResolver(config.MappingConfig{}, "docs/zh-cn/best-practices")
+	if err := r.IndexDocsRoot(root); err != nil {
+		t.Fatal(err)
+	}
+
+	p := model.Practice{PracticeID: "examples/dew/kps-keypair", SourcePath: "examples/dew/kps-keypair"}
+	if !r.IsSynced(p) {
+		t.Fatal("kps-keypair should be treated as already synced to keypair.md")
+	}
+	got := r.Resolve(p)
+	if got.Slug != "keypair" || got.Service != "dew" {
+		t.Fatalf("Resolve=%+v want dew/keypair", got)
+	}
+}
+
+func TestResolveKpsKeypairAlias(t *testing.T) {
+	r := NewResolver(config.MappingConfig{
+		PracticeAliases: map[string]string{"examples/dew/kps-keypair": "keypair"},
+	}, "docs/zh-cn/best-practices")
+	got := r.Resolve(model.Practice{PracticeID: "examples/dew/kps-keypair"})
+	if got.Slug != "keypair" {
+		t.Fatalf("slug=%s", got.Slug)
+	}
+}
+
+func TestSlugCandidatesDropsShortProductPrefix(t *testing.T) {
+	cands := SlugCandidates("dew", "kps-keypair")
+	found := false
+	for _, c := range cands {
+		if NormalizeKey(c) == "keypair" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("candidates=%v missing keypair", cands)
+	}
+	// Must not collapse kms_key → key (remaining too short)
+	for _, c := range SlugCandidates("dew", "kms_key") {
+		if NormalizeKey(c) == "key" {
+			t.Fatalf("kms_key must not yield key: %v", SlugCandidates("dew", "kms_key"))
+		}
+	}
+}
+
 func mkdirWrite(dir, name, content string) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
