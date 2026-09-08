@@ -97,24 +97,43 @@ func patchSUMMARY(content, service, serviceLabel, practiceSlug, practiceTitle, i
 			title string
 			line  string
 		}
-		var prefix []string // intro / non-practice lines kept in place before practices
+		var prefix []string // service line + intro (index.md) only; intro always first under the service
 		var practices []prac
+		var introLineExisting string
 		prefix = append(prefix, lines[svcStart])
 		for i := svcStart + 1; i < svcEnd; i++ {
 			line := lines[i]
+			if isSUMMARYIntroLine(line, service) {
+				if introLineExisting == "" {
+					introLineExisting = line
+				}
+				continue
+			}
 			if m := summaryPracticeRe.FindStringSubmatch(line); m != nil {
+				// Never sort index.md with practices (handled above); skip any stray index links.
+				if strings.EqualFold(m[3], "index.md") {
+					continue
+				}
 				practices = append(practices, prac{file: m[3], title: m[1], line: line})
 				continue
 			}
-			if len(practices) == 0 {
+			// Non-practice lines before the first practice stay in prefix (after intro).
+			if len(practices) == 0 && introLineExisting == "" {
 				prefix = append(prefix, line)
 			}
-			// trailing non-practice after practices is dropped/ignored (none expected)
+		}
+		if introLineExisting != "" {
+			prefix = append(prefix, introLineExisting)
+		} else {
+			prefix = append(prefix, introLine)
 		}
 		practices = append(practices, prac{file: practiceFile, title: practiceTitle, line: practiceLine})
 		if len(orderedFiles) > 0 {
 			rank := map[string]int{}
 			for i, f := range orderedFiles {
+				if strings.EqualFold(f, "index.md") {
+					continue
+				}
 				rank[f] = i
 			}
 			sort.SliceStable(practices, func(i, j int) bool {
@@ -153,6 +172,7 @@ func patchSUMMARY(content, service, serviceLabel, practiceSlug, practiceTitle, i
 }
 
 // PracticeFilesFromSUMMARY returns practice filenames (e.g. redis_account.md) under a service, in listed order.
+// The service Introduction (index.md) is excluded.
 func PracticeFilesFromSUMMARY(content, service string) []string {
 	content = strings.ReplaceAll(content, "\r\n", "\n")
 	lines := strings.Split(content, "\n")
@@ -163,10 +183,22 @@ func PracticeFilesFromSUMMARY(content, service string) []string {
 	var files []string
 	for i := start + 1; i < end; i++ {
 		if m := summaryPracticeRe.FindStringSubmatch(lines[i]); m != nil {
+			if strings.EqualFold(m[3], "index.md") {
+				continue
+			}
 			files = append(files, m[3])
 		}
 	}
 	return files
+}
+
+// isSUMMARYIntroLine reports whether line is the service Introduction / 简介 link to index.md.
+func isSUMMARYIntroLine(line, service string) bool {
+	m := summaryPracticeRe.FindStringSubmatch(line)
+	if m == nil {
+		return false
+	}
+	return m[2] == service && strings.EqualFold(m[3], "index.md")
 }
 
 func findServiceBlock(lines []string, service string) (start, end int, found bool) {
