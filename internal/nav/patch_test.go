@@ -87,6 +87,75 @@ This section contains the following best practices:
 	}
 }
 
+// Filename order would put redis_all_sessions_kill before redis_background_*; title order must be Account → Background → Instance.
+func TestPatchSUMMARYByEnglishTitleNotFilename(t *testing.T) {
+	base := `# Summary
+
+* [Best Practices](best-practices/)
+  * [Introduction](best-practices/README.md)
+  * [DCS](best-practices/dcs/)
+    * [Introduction](best-practices/dcs/index.md)
+    * [Deploy Redis Account](best-practices/dcs/redis_account.md)
+    * [Deploy Redis Instance All Sessions Kill](best-practices/dcs/redis_all_sessions_kill.md)
+`
+	got, err := nav.PatchSUMMARY(base, "dcs", "DCS", "redis_background_task_delete", "Deploy Redis Background Task Delete", nav.EnUS.IntroLabel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := strings.Index(got, "redis_account.md")
+	bg := strings.Index(got, "redis_background_task_delete.md")
+	inst := strings.Index(got, "redis_all_sessions_kill.md")
+	if account < 0 || bg < 0 || inst < 0 || !(account < bg && bg < inst) {
+		t.Fatalf("want Account < Background < Instance by English title:\n%s", got)
+	}
+}
+
+func TestPatchSUMMARYFollowOrderForZH(t *testing.T) {
+	enOrder := []string{"redis_account.md", "redis_background_task_delete.md", "redis_all_sessions_kill.md"}
+	zhBase := `# Summary
+
+* [最佳实践](best-practices/)
+  * [简介](best-practices/README.md)
+  * [DCS](best-practices/dcs/)
+    * [简介](best-practices/dcs/index.md)
+    * [部署 Redis 账号](best-practices/dcs/redis_account.md)
+    * [部署 Redis 实例杀掉所有会话](best-practices/dcs/redis_all_sessions_kill.md)
+`
+	got, err := nav.PatchSUMMARYFollowOrder(zhBase, "dcs", "DCS", "redis_background_task_delete", "部署 Redis 后台任务删除", nav.ZhCN.IntroLabel, enOrder)
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := strings.Index(got, "redis_account.md")
+	bg := strings.Index(got, "redis_background_task_delete.md")
+	inst := strings.Index(got, "redis_all_sessions_kill.md")
+	if account < 0 || bg < 0 || inst < 0 || !(account < bg && bg < inst) {
+		t.Fatalf("ZH must follow EN file order, not Chinese title sort:\n%s", got)
+	}
+}
+
+func TestPatchServiceIndexByEnglishTitle(t *testing.T) {
+	base := `# Introduction
+
+## Best Practices List
+
+This section contains the following best practices:
+
+* [Deploy Redis Account](redis_account.md) - Account.
+* [Deploy Redis Instance All Sessions Kill](redis_all_sessions_kill.md) - Kill sessions.
+
+`
+	got, err := nav.PatchServiceIndex(base, "redis_background_task_delete", "Deploy Redis Background Task Delete", "Background", nav.EnUS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := strings.Index(got, "(redis_account.md)")
+	bg := strings.Index(got, "(redis_background_task_delete.md)")
+	inst := strings.Index(got, "(redis_all_sessions_kill.md)")
+	if account < 0 || bg < 0 || inst < 0 || !(account < bg && bg < inst) {
+		t.Fatalf("want Account < Background < Instance:\n%s", got)
+	}
+}
+
 func TestPatchBestPracticesREADME(t *testing.T) {
 	base := `# Center
 

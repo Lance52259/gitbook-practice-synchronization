@@ -42,7 +42,18 @@ var EnUS = LocaleStrings{
 }
 
 // PatchSUMMARY inserts a practice link under the service section (surgical).
+// Practices under a service are ordered by practiceTitleAsc (typically the English H1/title).
 func PatchSUMMARY(content, service, serviceLabel, practiceSlug, practiceTitle, introLabel string) (string, error) {
+	return patchSUMMARY(content, service, serviceLabel, practiceSlug, practiceTitle, introLabel, nil)
+}
+
+// PatchSUMMARYFollowOrder inserts like PatchSUMMARY but orders practices by orderedFiles
+// (e.g. English SUMMARY practice file order) instead of by title.
+func PatchSUMMARYFollowOrder(content, service, serviceLabel, practiceSlug, practiceTitle, introLabel string, orderedFiles []string) (string, error) {
+	return patchSUMMARY(content, service, serviceLabel, practiceSlug, practiceTitle, introLabel, orderedFiles)
+}
+
+func patchSUMMARY(content, service, serviceLabel, practiceSlug, practiceTitle, introLabel string, orderedFiles []string) (string, error) {
 	service = strings.TrimSpace(service)
 	practiceSlug = strings.TrimSuffix(strings.TrimSpace(practiceSlug), ".md")
 	if service == "" || practiceSlug == "" {
@@ -68,6 +79,7 @@ func PatchSUMMARY(content, service, serviceLabel, practiceSlug, practiceTitle, i
 	}
 
 	practicePath := fmt.Sprintf("best-practices/%s/%s.md", service, practiceSlug)
+	practiceFile := practiceSlug + ".md"
 	practiceLine := fmt.Sprintf("    * [%s](%s)", practiceTitle, practicePath)
 	introLine := fmt.Sprintf("    * [%s](best-practices/%s/index.md)", introLabel, service)
 	serviceLine := fmt.Sprintf("  * [%s](best-practices/%s/)", serviceLabel, service)
@@ -80,11 +92,54 @@ func PatchSUMMARY(content, service, serviceLabel, practiceSlug, practiceTitle, i
 
 	svcStart, svcEnd, found := findServiceBlock(lines, service)
 	if found {
-		insertAt := practiceInsertIndex(lines, svcStart, svcEnd, practiceSlug)
+		type prac struct {
+			file  string
+			title string
+			line  string
+		}
+		var prefix []string // intro / non-practice lines kept in place before practices
+		var practices []prac
+		prefix = append(prefix, lines[svcStart])
+		for i := svcStart + 1; i < svcEnd; i++ {
+			line := lines[i]
+			if m := summaryPracticeRe.FindStringSubmatch(line); m != nil {
+				practices = append(practices, prac{file: m[3], title: m[1], line: line})
+				continue
+			}
+			if len(practices) == 0 {
+				prefix = append(prefix, line)
+			}
+			// trailing non-practice after practices is dropped/ignored (none expected)
+		}
+		practices = append(practices, prac{file: practiceFile, title: practiceTitle, line: practiceLine})
+		if len(orderedFiles) > 0 {
+			rank := map[string]int{}
+			for i, f := range orderedFiles {
+				rank[f] = i
+			}
+			sort.SliceStable(practices, func(i, j int) bool {
+				ri, okI := rank[practices[i].file]
+				rj, okJ := rank[practices[j].file]
+				if okI && okJ {
+					return ri < rj
+				}
+				if okI != okJ {
+					return okI
+				}
+				return strings.ToLower(practices[i].title) < strings.ToLower(practices[j].title)
+			})
+		} else {
+			sort.SliceStable(practices, func(i, j int) bool {
+				return strings.ToLower(practices[i].title) < strings.ToLower(practices[j].title)
+			})
+		}
 		out := make([]string, 0, len(lines)+1)
-		out = append(out, lines[:insertAt]...)
-		out = append(out, practiceLine)
-		out = append(out, lines[insertAt:]...)
+		out = append(out, lines[:svcStart]...)
+		out = append(out, prefix...)
+		for _, p := range practices {
+			out = append(out, p.line)
+		}
+		out = append(out, lines[svcEnd:]...)
 		return ensureTrailingNewline(strings.Join(out, "\n")), nil
 	}
 
@@ -95,6 +150,23 @@ func PatchSUMMARY(content, service, serviceLabel, practiceSlug, practiceTitle, i
 	out = append(out, block...)
 	out = append(out, lines[insertAt:]...)
 	return ensureTrailingNewline(strings.Join(out, "\n")), nil
+}
+
+// PracticeFilesFromSUMMARY returns practice filenames (e.g. redis_account.md) under a service, in listed order.
+func PracticeFilesFromSUMMARY(content, service string) []string {
+	content = strings.ReplaceAll(content, "\r\n", "\n")
+	lines := strings.Split(content, "\n")
+	start, end, ok := findServiceBlock(lines, service)
+	if !ok {
+		return nil
+	}
+	var files []string
+	for i := start + 1; i < end; i++ {
+		if m := summaryPracticeRe.FindStringSubmatch(lines[i]); m != nil {
+			files = append(files, m[3])
+		}
+	}
+	return files
 }
 
 func findServiceBlock(lines []string, service string) (start, end int, found bool) {
@@ -130,27 +202,6 @@ func findServiceBlock(lines []string, service string) (start, end int, found boo
 		}
 	}
 	return start, end, true
-}
-
-func practiceInsertIndex(lines []string, svcStart, svcEnd int, practiceSlug string) int {
-	target := practiceSlug + ".md"
-	insertAt := svcStart + 1
-	for i := svcStart + 1; i < svcEnd; i++ {
-		line := lines[i]
-		m := summaryPracticeRe.FindStringSubmatch(line)
-		if m == nil {
-			if strings.Contains(line, "/index.md)") {
-				insertAt = i + 1
-			}
-			continue
-		}
-		file := m[3]
-		if file > target {
-			return i
-		}
-		insertAt = i + 1
-	}
-	return insertAt
 }
 
 func newServiceInsertIndex(lines []string, service string) int {
@@ -191,8 +242,17 @@ func newServiceInsertIndex(lines []string, service string) int {
 	return insertAt
 }
 
-// PatchServiceIndex inserts one list item under the locale list heading, sorted by filename.
+// PatchServiceIndex inserts one list item under the locale list heading, sorted by practice title.
 func PatchServiceIndex(content, practiceSlug, practiceTitle, oneLiner string, loc LocaleStrings) (string, error) {
+	return patchServiceIndex(content, practiceSlug, practiceTitle, oneLiner, loc, nil)
+}
+
+// PatchServiceIndexFollowOrder inserts like PatchServiceIndex but orders list items by orderedFiles.
+func PatchServiceIndexFollowOrder(content, practiceSlug, practiceTitle, oneLiner string, loc LocaleStrings, orderedFiles []string) (string, error) {
+	return patchServiceIndex(content, practiceSlug, practiceTitle, oneLiner, loc, orderedFiles)
+}
+
+func patchServiceIndex(content, practiceSlug, practiceTitle, oneLiner string, loc LocaleStrings, orderedFiles []string) (string, error) {
 	practiceSlug = strings.TrimSuffix(strings.TrimSpace(practiceSlug), ".md")
 	if practiceSlug == "" {
 		return "", fmt.Errorf("practice slug required")
@@ -258,8 +318,9 @@ func PatchServiceIndex(content, practiceSlug, practiceTitle, oneLiner string, lo
 	}
 
 	type entry struct {
-		file string
-		line string
+		file  string
+		title string
+		line  string
 	}
 	var entries []entry
 	firstItem, lastItem := -1, -1
@@ -272,11 +333,31 @@ func PatchServiceIndex(content, practiceSlug, practiceTitle, oneLiner string, lo
 			firstItem = i
 		}
 		lastItem = i
-		entries = append(entries, entry{file: m[2], line: lines[i]})
+		entries = append(entries, entry{file: m[2], title: m[1], line: lines[i]})
 	}
 
-	entries = append(entries, entry{file: link, line: item})
-	sort.SliceStable(entries, func(i, j int) bool { return entries[i].file < entries[j].file })
+	entries = append(entries, entry{file: link, title: practiceTitle, line: item})
+	if len(orderedFiles) > 0 {
+		rank := map[string]int{}
+		for i, f := range orderedFiles {
+			rank[f] = i
+		}
+		sort.SliceStable(entries, func(i, j int) bool {
+			ri, okI := rank[entries[i].file]
+			rj, okJ := rank[entries[j].file]
+			if okI && okJ {
+				return ri < rj
+			}
+			if okI != okJ {
+				return okI
+			}
+			return strings.ToLower(entries[i].title) < strings.ToLower(entries[j].title)
+		})
+	} else {
+		sort.SliceStable(entries, func(i, j int) bool {
+			return strings.ToLower(entries[i].title) < strings.ToLower(entries[j].title)
+		})
+	}
 
 	newLines := make([]string, 0, len(entries))
 	for _, e := range entries {
@@ -297,6 +378,37 @@ func PatchServiceIndex(content, practiceSlug, practiceTitle, oneLiner string, lo
 		out = append(out, lines[lastItem+1:]...)
 	}
 	return ensureTrailingNewline(strings.Join(out, "\n")), nil
+}
+
+// PracticeFilesFromIndex returns practice filenames from a service index list, in listed order.
+func PracticeFilesFromIndex(content string, loc LocaleStrings) []string {
+	content = strings.ReplaceAll(content, "\r\n", "\n")
+	lines := strings.Split(content, "\n")
+	heading := loc.IndexListHeading
+	if heading == "" {
+		heading = "## Best Practices List"
+	}
+	listStart := -1
+	want := strings.TrimSpace(heading)
+	for i, line := range lines {
+		if strings.TrimSpace(line) == want {
+			listStart = i
+			break
+		}
+	}
+	if listStart < 0 {
+		return nil
+	}
+	var files []string
+	for i := listStart + 1; i < len(lines); i++ {
+		if strings.HasPrefix(strings.TrimSpace(lines[i]), "## ") {
+			break
+		}
+		if m := indexListRe.FindStringSubmatch(lines[i]); m != nil {
+			files = append(files, m[2])
+		}
+	}
+	return files
 }
 
 // PatchBestPracticesREADME inserts a service navigation block sorted by service path.

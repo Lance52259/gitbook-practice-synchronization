@@ -36,7 +36,7 @@ type ApplyOptions struct {
 	EnREADMEBlurb   string
 }
 
-// ApplyToFiles enforces Skill order: EN nav first (alpha), then ZH nav following same paths.
+// ApplyToFiles enforces Skill order: EN nav first (by English title), then ZH nav following EN paths.
 func ApplyToFiles(files []model.DocFileChange, opt ApplyOptions) ([]model.DocFileChange, error) {
 	if opt.CRepoRoot == "" || opt.Service == "" || opt.Slug == "" {
 		return files, nil
@@ -126,7 +126,7 @@ func ApplyToFiles(files []model.DocFileChange, opt ApplyOptions) ([]model.DocFil
 		out = append(out, f)
 	}
 
-	// --- Steps 3–5: English nav (defines alphabetical order) ---
+	// --- Steps 3–5: English nav (order by English practice title) ---
 	enSummaryPatched, err := PatchSUMMARY(enSummary, opt.Service, label, opt.Slug, enTitle, EnUS.IntroLabel)
 	if err != nil {
 		return nil, fmt.Errorf("patch en SUMMARY: %w", err)
@@ -135,7 +135,9 @@ func ApplyToFiles(files []model.DocFileChange, opt ApplyOptions) ([]model.DocFil
 		return nil, fmt.Errorf("refusing destructive en SUMMARY patch")
 	}
 	out = append(out, model.DocFileChange{Path: enSummaryPath, Action: "update", Content: enSummaryPatched})
+	enPracticeOrder := PracticeFilesFromSUMMARY(enSummaryPatched, opt.Service)
 
+	var enIdxPatched string
 	if newService {
 		if aiEnIndex == nil || strings.TrimSpace(aiEnIndex.Content) == "" {
 			return nil, fmt.Errorf("new service %s requires create of %s", opt.Service, enIndexPath)
@@ -144,7 +146,8 @@ func ApplyToFiles(files []model.DocFileChange, opt ApplyOptions) ([]model.DocFil
 		if patched, err := PatchServiceIndex(enIdx, opt.Slug, enTitle, enOne, EnUS); err == nil {
 			enIdx = patched
 		}
-		out = append(out, model.DocFileChange{Path: enIndexPath, Action: "create", Content: ensureTrailingNewline(enIdx)})
+		enIdxPatched = ensureTrailingNewline(enIdx)
+		out = append(out, model.DocFileChange{Path: enIndexPath, Action: "create", Content: enIdxPatched})
 		if enReadmeOK {
 			heading, blurb := ReadmeNavFromIndex(enIdx, EnUS, label)
 			if opt.EnREADMEHeading != "" {
@@ -176,11 +179,15 @@ func ApplyToFiles(files []model.DocFileChange, opt ApplyOptions) ([]model.DocFil
 		if IsDestructiveUpdate(enIndexBase, patched) {
 			return nil, fmt.Errorf("refusing destructive en index patch")
 		}
+		enIdxPatched = patched
 		out = append(out, model.DocFileChange{Path: enIndexPath, Action: "update", Content: patched})
 	}
+	if len(enPracticeOrder) == 0 {
+		enPracticeOrder = PracticeFilesFromIndex(enIdxPatched, EnUS)
+	}
 
-	// --- Steps 6–8: Chinese nav (follow English path order) ---
-	zhSummaryPatched, err := PatchSUMMARY(zhSummary, opt.Service, label, opt.Slug, zhTitle, ZhCN.IntroLabel)
+	// --- Steps 6–8: Chinese nav (follow English practice file order) ---
+	zhSummaryPatched, err := PatchSUMMARYFollowOrder(zhSummary, opt.Service, label, opt.Slug, zhTitle, ZhCN.IntroLabel, enPracticeOrder)
 	if err != nil {
 		return nil, fmt.Errorf("patch zh SUMMARY: %w", err)
 	}
@@ -194,7 +201,7 @@ func ApplyToFiles(files []model.DocFileChange, opt ApplyOptions) ([]model.DocFil
 			return nil, fmt.Errorf("new service %s requires create of %s", opt.Service, zhIndexPath)
 		}
 		zhIdx := aiZhIndex.Content
-		if patched, err := PatchServiceIndex(zhIdx, opt.Slug, zhTitle, zhOne, ZhCN); err == nil {
+		if patched, err := PatchServiceIndexFollowOrder(zhIdx, opt.Slug, zhTitle, zhOne, ZhCN, enPracticeOrder); err == nil {
 			zhIdx = patched
 		}
 		out = append(out, model.DocFileChange{Path: zhIndexPath, Action: "create", Content: ensureTrailingNewline(zhIdx)})
@@ -222,7 +229,7 @@ func ApplyToFiles(files []model.DocFileChange, opt ApplyOptions) ([]model.DocFil
 		if !zhIndexExists {
 			return nil, fmt.Errorf("existing service missing %s", zhIndexPath)
 		}
-		patched, err := PatchServiceIndex(zhIndexBase, opt.Slug, zhTitle, zhOne, ZhCN)
+		patched, err := PatchServiceIndexFollowOrder(zhIndexBase, opt.Slug, zhTitle, zhOne, ZhCN, enPracticeOrder)
 		if err != nil {
 			return nil, fmt.Errorf("patch zh index: %w", err)
 		}
