@@ -155,6 +155,37 @@ func TestDetectServiceAlias(t *testing.T) {
 	}
 }
 
+func TestDetectKpsKeypairAlreadySynced(t *testing.T) {
+	tmp := t.TempDir()
+	b := filepath.Join(tmp, "b")
+	c := filepath.Join(tmp, "c")
+	_ = os.MkdirAll(filepath.Join(b, "examples", "dew", "kps-keypair"), 0o755)
+	_ = os.WriteFile(filepath.Join(b, "examples", "dew", "kps-keypair", "main.tf"), []byte(""), 0o644)
+	_ = os.MkdirAll(filepath.Join(c, "docs", "zh-cn", "best-practices", "dew"), 0o755)
+	_ = os.WriteFile(filepath.Join(c, "docs", "zh-cn", "best-practices", "dew", "keypair.md"), []byte("# Deploy Keypair\n"), 0o644)
+
+	s := &config.Settings{
+		BRepo:          "o/b",
+		CRepo:          "o/c",
+		SyncedStrategy: "path_infer",
+		CDocsRoot:      "docs/zh-cn/best-practices",
+		BExamplesPath:  "examples",
+		IgnoreNames:    []string{"README.md"},
+		Granularity:    "nested_directory",
+	}
+	ctx := &monitor.RepoContext{
+		B: model.RepoRef{LocalPath: b},
+		C: model.RepoRef{LocalPath: c},
+	}
+	result, err := (&monitor.ChangeDetector{Settings: s}).Detect(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.NewPractices) != 0 {
+		t.Fatalf("kps-keypair must not be new when keypair.md exists, got %+v", result.NewPractices)
+	}
+}
+
 func TestDetectNewOnly(t *testing.T) {
 	tmp := t.TempDir()
 	b := filepath.Join(tmp, "b")

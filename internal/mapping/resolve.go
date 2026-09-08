@@ -103,14 +103,14 @@ func (r *Resolver) Resolve(p model.Practice) DocTarget {
 	if actualSvc, ok := r.serviceByNorm[NormalizeKey(cService)]; ok {
 		cService = actualSvc
 	}
+	cands := SlugCandidates(bService, bSlug)
+	cands = append(cands, cSlug)
 	if slugMap, ok := r.slugsByService[cService]; ok {
-		if actual, ok := slugMap[NormalizeKey(cSlug)]; ok {
-			cSlug = actual
-		} else if actual, ok := slugMap[NormalizeKey(bSlug)]; ok {
+		if actual := lookupSlug(slugMap, cands...); actual != "" {
 			cSlug = actual
 		}
 	} else if cService == "" {
-		if actual, ok := r.flatSlugs[NormalizeKey(cSlug)]; ok {
+		if actual := lookupSlug(r.flatSlugs, cands...); actual != "" {
 			cSlug = actual
 		}
 	}
@@ -156,19 +156,16 @@ func (r *Resolver) CanonicalSlug(practiceID, bService, bSlug string) string {
 // IsSynced reports whether a matching doc already exists under C.
 func (r *Resolver) IsSynced(p model.Practice) bool {
 	target := r.Resolve(p)
+	cands := SlugCandidates(p.Service(), p.Slug())
+	cands = append(cands, target.Slug)
+
 	if target.Service == "" {
-		if _, ok := r.flatSlugs[NormalizeKey(target.Slug)]; ok {
-			return true
-		}
-		if _, ok := r.flatSlugs[NormalizeKey(p.Slug())]; ok {
+		if lookupSlug(r.flatSlugs, cands...) != "" {
 			return true
 		}
 	}
 	if slugMap, ok := r.slugsByService[target.Service]; ok {
-		if _, ok := slugMap[NormalizeKey(target.Slug)]; ok {
-			return true
-		}
-		if _, ok := slugMap[NormalizeKey(p.Slug())]; ok {
+		if lookupSlug(slugMap, cands...) != "" {
 			return true
 		}
 	}
@@ -179,34 +176,141 @@ func (r *Resolver) IsSynced(p model.Practice) bool {
 		}
 		if svc, ok := r.serviceByNorm[key]; ok {
 			if slugMap := r.slugsByService[svc]; slugMap != nil {
-				if _, ok := slugMap[NormalizeKey(target.Slug)]; ok {
-					return true
-				}
-				if _, ok := slugMap[NormalizeKey(p.Slug())]; ok {
+				if lookupSlug(slugMap, cands...) != "" {
 					return true
 				}
 			}
 		}
 	}
 	if r.docsAbs != "" {
-		candidates := []string{
+		paths := []string{
 			filepath.Join(r.docsAbs, target.Service, target.Slug+".md"),
 			filepath.Join(r.docsAbs, target.Slug+".md"),
 		}
-		if p.Service() != "" && p.Service() != target.Service {
-			candidates = append(candidates, filepath.Join(r.docsAbs, p.Service(), PreferUnderscore(p.Slug())+".md"))
-			candidates = append(candidates, filepath.Join(r.docsAbs, p.Service(), p.Slug()+".md"))
+		for _, cand := range cands {
+			stem := PreferUnderscore(cand)
+			if target.Service != "" {
+				paths = append(paths, filepath.Join(r.docsAbs, target.Service, stem+".md"))
+			}
+			paths = append(paths, filepath.Join(r.docsAbs, stem+".md"))
+			if p.Service() != "" && p.Service() != target.Service {
+				paths = append(paths, filepath.Join(r.docsAbs, p.Service(), stem+".md"))
+			}
 		}
-		for _, c := range candidates {
+		seen := map[string]struct{}{}
+		for _, c := range paths {
 			if c == "" || strings.Contains(c, string(filepath.Separator)+string(filepath.Separator)) {
 				continue
 			}
+			if _, ok := seen[c]; ok {
+				continue
+			}
+			seen[c] = struct{}{}
 			if _, err := os.Stat(c); err == nil {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+// SlugCandidates returns normalized lookup forms for a B practice slug.
+// Includes PreferUnderscore(slug) and, when the first segment looks like a short
+// product code (e.g. kps-keypair → keypair), the slug with that prefix dropped.
+// This mirrors C-repo naming where Deploy Keypair lives at keypair.md, not kps_keypair.md.
+func SlugCandidates(service, slug string) []string {
+	seen := map[string]struct{}{}
+	var out []string
+	add := func(s string) {
+		s = PreferUnderscore(strings.TrimSpace(s))
+		if s == "" {
+			return
+		}
+		k := NormalizeKey(s)
+		if _, ok := seen[k]; ok {
+			return
+		}
+		seen[k] = struct{}{}
+		out = append(out, s)
+	}
+
+	add(slug)
+	if service != "" {
+		add(stripLeadingServiceToken(slug, service))
+	}
+
+	parts := splitSlugParts(PreferUnderscore(slug))
+	if len(parts) >= 2 && isShortProductToken(parts[0]) {
+		rest := strings.Join(parts[1:], "_")
+		// Avoid over-aggressive matches like kms_key → key (too short).
+		if len(NormalizeKey(rest)) >= 4 {
+			add(rest)
+		}
+	}
+	return out
+}
+
+func lookupSlug(slugMap map[string]string, candidates ...string) string {
+	for _, c := range candidates {
+		if c == "" || slugMap == nil {
+			continue
+		}
+		if actual, ok := slugMap[NormalizeKey(c)]; ok {
+			return actual
+		}
+	}
+	return ""
+}
+
+func splitSlugParts(slug string) []string {
+	slug = PreferUnderscore(slug)
+	if slug == "" {
+		return nil
+	}
+	return strings.Split(slug, "_")
+}
+
+func isShortProductToken(s string) bool {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if n := len(s); n < 2 || n > 5 {
+		return false
+	}
+	for _, r := range s {
+		if r < 'a' || r > 'z' {
+			return false
+		}
+	}
+	return true
+}
+
+// stripLeadingServiceToken drops a leading service name from slug when present
+// (e.g. ecs-simple-instance under ecs → simple-instance).
+func stripLeadingServiceToken(slug, service string) string {
+	slug = strings.TrimSpace(slug)
+	service = strings.TrimSpace(service)
+	if slug == "" || service == "" {
+		return slug
+	}
+	variants := []string{
+		service,
+		strings.ReplaceAll(service, "-", "_"),
+		strings.ReplaceAll(service, "_", "-"),
+		NormalizeKey(service),
+	}
+	lower := strings.ToLower(slug)
+	for _, v := range variants {
+		v = strings.ToLower(strings.TrimSpace(v))
+		if v == "" {
+			continue
+		}
+		for _, sep := range []string{"_", "-"} {
+			prefix := v + sep
+			if strings.HasPrefix(lower, prefix) && len(slug) > len(prefix) {
+				return slug[len(prefix):]
+			}
+		}
+	}
+	return slug
 }
 
 // NormalizeKey removes separators for fuzzy comparison.
