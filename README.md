@@ -44,7 +44,7 @@
 - **Open PR 跳过（按服务）**：扫描 C 仓本工具创建的 `gitbook-practice-synchronization/...` 分支上的 open PR，解析标题中的 `docs({service})`；**该服务下所有未对接实践一律跳过**，直到 PR 合入后的下一次扫描。同一次扫描内每个服务最多处理 **1** 条实践，避免并行污染 `index.md` / `SUMMARY.md`
 - **干净基线生成**：每条实践 Generate / Apply 前将 C 工作树 `reset --hard` 到 `origin/$C_DEFAULT_BRANCH`，避免同一次 run 中上一条 PR 的导航残留写进下一条（跨服务污染）
 - **中英双语生成**：按 Skill 顺序产出 `docs/zh-cn/` 与 `docs/en-us/` 正文
-- **安全导航补丁**：`SUMMARY.md` / `index.md` / `README.md` 仅定点插入；英文侧先按字母序定目录，中文侧跟随；禁止整文件重写
+- **安全导航补丁**：`SUMMARY.md` / `index.md` / `README.md` 仅定点插入；英文侧实践按 **英文标题（H1）字母序** 定目录，中文侧跟随英文路径顺序；禁止整文件重写
 - **一实践一 PR**：提交信息与 PR 标题统一为 `docs({service}): support new best practice for {title}`
 - **串行等 CI**：同一次 run 中，上一条 PR 开出后最多等待 `PR_CHECKS_WAIT_SECONDS`（默认 120s）检查 Checks/Statuses；通过后再处理下一条；超时或失败则醒目日志并跳过本轮后续全部实践
 - **本地 Dry-run**：不 push、不开真实 PR，便于联调

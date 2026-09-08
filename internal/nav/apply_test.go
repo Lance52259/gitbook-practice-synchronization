@@ -174,6 +174,71 @@ Advanced Anti-DDoS (AAD) is a DDoS attack protection service provided by Huawei 
 	}
 }
 
+func TestApplyToFilesOrdersByEnglishTitleThenZHFollows(t *testing.T) {
+	root := t.TempDir()
+	writeTree(t, root, map[string]string{
+		"docs/zh-cn/SUMMARY.md": `# Summary
+
+* [最佳实践](best-practices/)
+  * [简介](best-practices/README.md)
+  * [DCS](best-practices/dcs/)
+    * [简介](best-practices/dcs/index.md)
+    * [部署 Redis 账号](best-practices/dcs/redis_account.md)
+    * [部署 Redis 实例杀掉所有会话](best-practices/dcs/redis_all_sessions_kill.md)
+`,
+		"docs/en-us/SUMMARY.md": `# Summary
+
+* [Best Practices](best-practices/)
+  * [Introduction](best-practices/README.md)
+  * [DCS](best-practices/dcs/)
+    * [Introduction](best-practices/dcs/index.md)
+    * [Deploy Redis Account](best-practices/dcs/redis_account.md)
+    * [Deploy Redis Instance All Sessions Kill](best-practices/dcs/redis_all_sessions_kill.md)
+`,
+		"docs/zh-cn/best-practices/dcs/index.md": `# 简介
+
+## 最佳实践列表
+
+* [部署 Redis 账号](redis_account.md) - 账号。
+* [部署 Redis 实例杀掉所有会话](redis_all_sessions_kill.md) - 会话。
+`,
+		"docs/en-us/best-practices/dcs/index.md": `# Introduction
+
+## Best Practices List
+
+* [Deploy Redis Account](redis_account.md) - Account.
+* [Deploy Redis Instance All Sessions Kill](redis_all_sessions_kill.md) - Kill.
+`,
+		"docs/zh-cn/best-practices/README.md": "# 中心\n\n## 文档导航\n\n### [DCS最佳实践](dcs/index.md)\n\nDCS。\n",
+		"docs/en-us/best-practices/README.md": "# Center\n\n## Documentation Navigation\n\n### [DCS Best Practices](dcs/index.md)\n\nDCS.\n",
+	})
+
+	files := []model.DocFileChange{
+		{Path: "docs/zh-cn/best-practices/dcs/redis_background_task_delete.md", Action: "create", Content: "# 部署 Redis 后台任务删除\n"},
+		{Path: "docs/en-us/best-practices/dcs/redis_background_task_delete.md", Action: "create", Content: "# Deploy Redis Background Task Delete\n"},
+	}
+	out, err := nav.ApplyToFiles(files, nav.ApplyOptions{
+		CRepoRoot: root,
+		Service:   "dcs",
+		Slug:      "redis_background_task_delete",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, f := range out {
+		got[f.Path] = f.Content
+	}
+	for _, p := range []string{"docs/en-us/SUMMARY.md", "docs/zh-cn/SUMMARY.md", "docs/en-us/best-practices/dcs/index.md", "docs/zh-cn/best-practices/dcs/index.md"} {
+		account := strings.Index(got[p], "redis_account.md")
+		bg := strings.Index(got[p], "redis_background_task_delete.md")
+		inst := strings.Index(got[p], "redis_all_sessions_kill.md")
+		if account < 0 || bg < 0 || inst < 0 || !(account < bg && bg < inst) {
+			t.Fatalf("%s want Account < Background < Instance:\n%s", p, got[p])
+		}
+	}
+}
+
 func TestApplyRequiresBothSUMMARY(t *testing.T) {
 	root := t.TempDir()
 	_ = os.MkdirAll(filepath.Join(root, "docs", "zh-cn"), 0o755)
