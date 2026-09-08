@@ -302,7 +302,7 @@ This section contains the following best practices:
 | `## Best Practices Overview` | **必须两段**，套用下列句式（仅替换服务名与资源表述，勿自行改写成一句短述）： |
 | | ① `This section provides best practice examples for using Terraform to automatically deploy and manage Huawei Cloud {Name}, helping you understand how to efficiently manage cloud {Name} … resources using Infrastructure as Code (IaC).` |
 | | ② `Through the best practices in this section, you can learn the main deployment processes for {Name} … resources. These best practices will help you quickly get started with automated {Name} deployment and lay a solid foundation for subsequent {Name} management and operation work.` |
-| `## Best Practices List` | 固定导语一行：`This section contains the following best practices:`。列表用 `*`。每条：`* [{与英文正文 H1 完全一致的标题}](file.md) - Introduces how to use Terraform to …`。**标题必须是 `Deploy …`，禁止 `AAD Black/White Lists` 这类缺 Deploy 的写法** |
+| `## Best Practices List` | 固定导语一行：`This section contains the following best practices:`。列表用 `*`。每条格式：`* [{与英文正文 H1 完全一致的标题}](file.md) - {一句话说明}`。**标题必须是 `Deploy …`**。一句话说明须对齐有价值现网写法，模板为：`Introduces how to use Terraform to automatically {H1 首字母小写}[, including {资源/步骤归类}, …].`。**正确示例：** `Introduces how to use Terraform to automatically deploy DCS master-standby Redis instances, including VPC creation, instance configuration, backup policy, and whitelist management.`。**禁止**弱占位：`Introduces how to use Terraform to automate «Deploy …».` / `automate Deploy …`（无 including、无资源归类）；**禁止**书名号/引号包裹标题（`«»`/`《》`/`「」`） |
 | `## Reference Materials` | 两条：① 华为云该产品 Supports index；② **固定** `[Terraform Official Documentation](https://www.terraform.io/docs/index.html)`。**不要**在 index 放 Provider 文档链接（Provider 属于实践正文 Reference Information） |
 
 ### 中文（步骤 6）固定骨架与内容量
@@ -335,7 +335,7 @@ This section contains the following best practices:
 | `# 简介` | 固定两字标题 |
 | `## 什么是…` | **至少两段**产品介绍（对齐中文 Anti-DDoS），可引用华为云 Supports 语义，勿编造不存在的计费/规格细节 |
 | `## 最佳实践简述` | **必须两段**：① `本章节提供了使用Terraform自动化部署和管理华为云{全称}（{简称}）的最佳实践示例，帮助您了解如何利用Infrastructure as Code（IaC）的方式高效地管理云上的{简称}…资源。` ② `通过本章节的最佳实践，您可以学习到主要的{简称}…资源的部署流程，这些最佳实践将帮助您快速上手{简称}的自动化部署，并为后续的…管理和运维工作奠定坚实基础。` |
-| `## 最佳实践列表` | 固定导语：`本章节包含以下最佳实践：`。每条 `* [{与中文正文 H1 完全一致的标题}](file.md) - 介绍如何使用Terraform…`。**标题必须是 `部署…`，禁止 `AAD黑白名单最佳实践`（带「最佳实践」后缀或缺少「部署」）**；顺序与英文 index 一致 |
+| `## 最佳实践列表` | 固定导语：`本章节包含以下最佳实践：`。每条格式：`* [{与中文正文 H1 完全一致的标题}](file.md) - {一句话说明}`。**标题必须是 `部署…`**。一句话说明模板：`介绍如何使用Terraform自动化{H1}[，包括{资源/步骤归类}、…]。`。**正确示例：** `介绍如何使用Terraform自动化部署DCS主备Redis实例，包括VPC创建、实例配置、备份策略和白名单管理。`。**禁止**弱占位：`介绍如何使用Terraform自动化完成「部署…」。`（无「包括」、无资源归类）；顺序与英文 index 一致 |
 | `## 参考资料` | 产品文档 + **固定** Terraform 官方文档；不要用 Provider 文档替代第二条 |
 
 ### 错误示例（AAD 精简版 — 禁止再现）

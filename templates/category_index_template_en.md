@@ -14,7 +14,8 @@ Through the best practices in this section, you can learn the main deployment pr
 
 This section contains the following best practices:
 
-* [{Practice title matching body H1, e.g. Deploy Black/White Lists}]({practice}.md) - Introduces how to use Terraform to automatically deploy …, including ….
+* [{Practice title matching body H1, e.g. Deploy Black/White Lists}]({practice}.md) - Introduces how to use Terraform to automatically {lower-case first letter of H1}, including {resource/step categories}.
+  Example: Introduces how to use Terraform to automatically deploy DCS master-standby Redis instances, including VPC creation, instance configuration, backup policy, and whitelist management.
 
 ## Reference Materials
 

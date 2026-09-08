@@ -54,14 +54,8 @@ func ApplyToFiles(files []model.DocFileChange, opt ApplyOptions) ([]model.DocFil
 		// weak fallback
 		enTitle = zhTitle
 	}
-	zhOne := opt.ZhOneLiner
-	if zhOne == "" {
-		zhOne = fmt.Sprintf("介绍如何使用Terraform自动化完成「%s」", zhTitle)
-	}
-	enOne := opt.EnOneLiner
-	if enOne == "" {
-		enOne = fmt.Sprintf("Introduces how to use Terraform to automate «%s»", enTitle)
-	}
+	opt.ZhTitle = zhTitle
+	opt.EnTitle = enTitle
 
 	label := opt.ServiceLabel
 	if label == "" {
@@ -111,20 +105,25 @@ func ApplyToFiles(files []model.DocFileChange, opt ApplyOptions) ([]model.DocFil
 		if _, isNav := navPaths[p]; isNav {
 			switch p {
 			case zhIndexPath:
-				if newService {
-					cp := f
-					aiZhIndex = &cp
-				}
+				cp := f
+				aiZhIndex = &cp
 			case enIndexPath:
-				if newService {
-					cp := f
-					aiEnIndex = &cp
-				}
+				cp := f
+				aiEnIndex = &cp
 			}
 			continue
 		}
 		out = append(out, f)
 	}
+
+	aiZhIdxContent, aiEnIdxContent := "", ""
+	if aiZhIndex != nil {
+		aiZhIdxContent = aiZhIndex.Content
+	}
+	if aiEnIndex != nil {
+		aiEnIdxContent = aiEnIndex.Content
+	}
+	zhOne, enOne := BuildPracticeOneLiners(opt, files, aiZhIdxContent, aiEnIdxContent)
 
 	// --- Steps 3–5: English nav (order by English practice title) ---
 	enSummaryPatched, err := PatchSUMMARY(enSummary, opt.Service, label, opt.Slug, enTitle, EnUS.IntroLabel)

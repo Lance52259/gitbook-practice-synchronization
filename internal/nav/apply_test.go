@@ -95,6 +95,18 @@ func TestApplyToFilesExistingServiceBilingual(t *testing.T) {
 	if !strings.Contains(got["docs/zh-cn/best-practices/ecs/index.md"], "prepaid_instance.md") {
 		t.Fatalf("zh index: %s", got["docs/zh-cn/best-practices/ecs/index.md"])
 	}
+	for _, p := range []string{"docs/en-us/best-practices/ecs/index.md", "docs/zh-cn/best-practices/ecs/index.md"} {
+		if strings.ContainsAny(got[p], "«»《》「」") {
+			t.Fatalf("one-liner must not wrap title in quotes/guillemets: %s\n%s", p, got[p])
+		}
+	}
+	enIdx := got["docs/en-us/best-practices/ecs/index.md"]
+	if !strings.Contains(enIdx, "Introduces how to use Terraform to automatically deploy PrePaid Instance") {
+		t.Fatalf("EN one-liner should lower-case H1 after 'automatically': %s", enIdx)
+	}
+	if strings.Contains(strings.ToLower(enIdx), "to automate deploy") {
+		t.Fatalf("must not use weak 'automate Deploy' form: %s", enIdx)
+	}
 }
 
 func TestApplyToFilesNewServiceBilingual(t *testing.T) {

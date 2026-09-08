@@ -27,7 +27,7 @@ const outputSchemaHint = `你必须只输出一个 JSON 对象（不要 Markdown
 2. content 为完整文档正文
 3. 不要在 JSON 外输出任何文字
 4. 必须同时 create 中文与英文实践正文（同一 {service}/{practice}）
-5. 新服务时还须 create 中英 index.md，且须达到 Skill「分类 index.md 规范」/Anti-DDoS 同等篇幅（What is≥2段、Overview两段套话、List含导语与条目说明且标题与正文 H1 一致为 Deploy…/部署…、参考资料含 Terraform Official Documentation）；禁止精简版
+5. 新服务时还须 create 中英 index.md，且须达到 Skill「分类 index.md 规范」/Anti-DDoS 同等篇幅（What is≥2段、Overview两段套话、List含导语与条目说明且标题与正文 H1 一致为 Deploy…/部署…、参考资料含 Terraform Official Documentation）；禁止精简版。列表一句话须用：EN Introduces how to use Terraform to automatically {H1首字母小写}, including …；ZH 介绍如何使用Terraform自动化{H1}，包括…；禁止 automate «Deploy …» / 自动化完成「部署…」弱占位
 6. 正文 H1：中文「部署…」、英文「Deploy …」；无 data source 时导语勿写「资源和数据源」；tfvars 步骤标题含（可选）/(Optional)；步骤内联 variable 且同一变量名全文只声明一次（后步禁止重复）；无 region 参数用完整缺省继承注释
 7. SUMMARY/README 导航由编排层按「英文定序、中文跟随」补丁，禁止整文件重写 SUMMARY
 8. 严禁把 SUMMARY.md 重写成短目录或改掉「# Summary」标题`
