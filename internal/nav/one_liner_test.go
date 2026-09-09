@@ -70,6 +70,44 @@ func TestResourceHintsFromPractice(t *testing.T) {
 	}
 }
 
+func TestResourceHintsStripChineseResourceType(t *testing.T) {
+	body := `# 部署Redis自定义模板
+
+## 相关资源/数据源
+
+### 资源
+
+- [DCS自定义模板（huaweicloud_dcs_custom_template）](https://example.com)
+
+## 操作步骤
+`
+	hints := nav.ResourceHintsFromPractice(body)
+	if len(hints) != 1 || hints[0] != "DCS自定义模板" {
+		t.Fatalf("hints=%v", hints)
+	}
+	for _, h := range hints {
+		if strings.Contains(h, "huaweicloud_") {
+			t.Fatalf("must strip resource type: %v", hints)
+		}
+	}
+
+	one := nav.DefaultChineseOneLiner("部署Redis自定义模板", hints)
+	if strings.Contains(one, "huaweicloud_") || strings.Contains(one, "（huaweicloud") {
+		t.Fatalf("ZH one-liner must match existing style without resource types: %q", one)
+	}
+	want := "介绍如何使用Terraform自动化部署Redis自定义模板，包括DCS自定义模板。"
+	if one != want {
+		t.Fatalf("got %q want %q", one, want)
+	}
+}
+
+func TestIsWeakOneLinerRejectsResourceType(t *testing.T) {
+	bad := `介绍如何使用Terraform自动化部署Redis中心任务删除，包括DCS中心任务删除（huaweicloud_dcs_center_task_delete）。`
+	if !nav.IsWeakOneLiner(bad) {
+		t.Fatal("one-liner with huaweicloud_ resource type must be weak")
+	}
+}
+
 func TestOneLinerFromIndexList(t *testing.T) {
 	idx := `## Best Practices List
 
