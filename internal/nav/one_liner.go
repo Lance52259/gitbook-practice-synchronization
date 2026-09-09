@@ -13,7 +13,8 @@ import (
 var (
 	indexItemOneLinerRe = regexp.MustCompile(`(?m)^\*\s+\[[^\]]+\]\(([^)]+\.md)\)\s+-\s+(.+)$`)
 	resourceBulletRe    = regexp.MustCompile(`(?m)^[\*\-]\s*\[([^\]]+)\]\([^)]*\)`)
-	resourceTypeRe      = regexp.MustCompile(`(?i)\(huaweicloud_([a-z0-9_]+)\)`)
+	resourceTypeRe      = regexp.MustCompile(`(?i)[（(]huaweicloud_([a-z0-9_]+)[）)]`)
+	huaweicloudTokenRe  = regexp.MustCompile(`(?i)huaweicloud_[a-z0-9_]+`)
 )
 
 // DefaultEnglishOneLiner builds an index-list blurb in the valuable C-repo style:
@@ -59,13 +60,17 @@ func LowerFirst(s string) string {
 	return string(unicode.ToLower(r)) + s[size:]
 }
 
-// IsWeakOneLiner reports placeholder blurbs (quoted title / "automate Title" without including).
+// IsWeakOneLiner reports placeholder blurbs (quoted title / "automate Title" without including /
+// or raw Terraform resource type tokens that existing C-repo index lines never show).
 func IsWeakOneLiner(s string) bool {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return true
 	}
 	if strings.ContainsAny(s, "«»《》「」") {
+		return true
+	}
+	if huaweicloudTokenRe.MatchString(s) {
 		return true
 	}
 	lower := strings.ToLower(s)
@@ -127,12 +132,8 @@ func ResourceHintsFromPractice(content string) []string {
 			add(cat)
 			continue
 		}
-		// Strip trailing (huaweicloud_…)
-		if i := strings.LastIndex(label, "("); i > 0 {
-			label = strings.TrimSpace(label[:i])
-		}
-		if label != "" {
-			add(label)
+		if cleaned := cleanResourceDisplayLabel(label); cleaned != "" {
+			add(cleaned)
 		}
 	}
 
@@ -141,6 +142,25 @@ func ResourceHintsFromPractice(content string) []string {
 		out = out[:5]
 	}
 	return out
+}
+
+// cleanResourceDisplayLabel strips Terraform type suffixes such as
+// (huaweicloud_dcs_custom_template) / （huaweicloud_dcs_custom_template）.
+// Existing C-repo ZH index lines never expose raw resource type names.
+func cleanResourceDisplayLabel(label string) string {
+	label = strings.TrimSpace(label)
+	if label == "" {
+		return ""
+	}
+	label = resourceTypeRe.ReplaceAllString(label, "")
+	label = huaweicloudTokenRe.ReplaceAllString(label, "")
+	label = strings.TrimSpace(label)
+	label = strings.TrimRight(label, "（( ")
+	label = strings.TrimSpace(label)
+	if huaweicloudTokenRe.MatchString(label) {
+		return ""
+	}
+	return label
 }
 
 func relatedResourcesSection(content string) string {
@@ -265,10 +285,13 @@ func BuildPracticeOneLiners(opt ApplyOptions, files []model.DocFileChange, aiZhI
 	link := opt.Slug + ".md"
 	enBody := contentFromFiles(files, filepath.ToSlash(filepath.Join(enDocsRoot, opt.Service, link)))
 	zhBody := contentFromFiles(files, filepath.ToSlash(filepath.Join(zhDocsRoot, opt.Service, link)))
-	enHints := ResourceHintsFromPractice(enBody)
-	zhHints := ResourceHintsFromPractice(zhBody)
+	enHints := sanitizeIncludingHints(ResourceHintsFromPractice(enBody))
+	zhHints := sanitizeIncludingHints(ResourceHintsFromPractice(zhBody))
 	if len(zhHints) == 0 {
 		zhHints = translateHintsToZH(enHints)
+	} else {
+		// categoryFromResourceLabel yields English phrases even from ZH bodies.
+		zhHints = translateHintsToZH(zhHints)
 	}
 
 	enOne = strings.TrimSpace(opt.EnOneLiner)
@@ -288,6 +311,25 @@ func BuildPracticeOneLiners(opt ApplyOptions, files []model.DocFileChange, aiZhI
 		}
 	}
 	return zhOne, enOne
+}
+
+func sanitizeIncludingHints(hints []string) []string {
+	out := make([]string, 0, len(hints))
+	seen := map[string]struct{}{}
+	for _, h := range hints {
+		h = cleanResourceDisplayLabel(h)
+		h = collapseSpace(strings.TrimSpace(h))
+		if h == "" || huaweicloudTokenRe.MatchString(h) {
+			continue
+		}
+		key := strings.ToLower(h)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, h)
+	}
+	return out
 }
 
 func contentFromFiles(files []model.DocFileChange, want string) string {
