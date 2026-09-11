@@ -344,6 +344,7 @@ func (g *DocGenerator) Generate(ctx context.Context, practice model.Practice, pr
 			lastErr = err
 			continue
 		}
+		files = CanonicalizePracticeBodies(files, doc.Service, doc.Slug)
 		files, err = nav.ApplyToFiles(files, nav.ApplyOptions{
 			CRepoRoot: cRepoRoot,
 			Service:   doc.Service,
@@ -355,6 +356,16 @@ func (g *DocGenerator) Generate(ctx context.Context, practice model.Practice, pr
 		}
 		if err := requireBilingualBodies(files, g.Settings.CDocsRoot, doc.Service, doc.Slug); err != nil {
 			lastErr = err
+			dump := g.dumpAIFailure(practice.PracticeID, attempt, raw, err)
+			if dump != "" {
+				dumpPaths = append(dumpPaths, dump)
+				fmt.Printf("bilingual bodies missing for %s (attempt %d); dumped %s; got paths: %v\n",
+					practice.PracticeID, attempt+1, dump, filePaths(files))
+			}
+			messages = append(messages,
+				provider.ChatMessage{Role: "assistant", Content: raw},
+				provider.ChatMessage{Role: "user", Content: bilingualRepairHint(doc.Service, doc.Slug)},
+			)
 			continue
 		}
 		summary, _ := data["summary"].(string)
@@ -373,6 +384,103 @@ func (g *DocGenerator) Generate(ctx context.Context, practice model.Practice, pr
 
 const jsonRepairHint = `Previous output was not valid/complete JSON. Reply with ONE JSON object only — no markdown fences, no commentary.
 Ensure every string (especially files[].content) has correct escaping, and that all braces/brackets are closed. Keep bilingual bodies but prefer shorter HCL excerpts if needed to avoid truncation.`
+
+func bilingualRepairHint(service, slug string) string {
+	zh := filepath.ToSlash(filepath.Join("docs/zh-cn/best-practices", service, slug+".md"))
+	en := filepath.ToSlash(filepath.Join("docs/en-us/best-practices", service, slug+".md"))
+	return fmt.Sprintf(`Previous output was missing required bilingual practice bodies.
+Reply with ONE JSON object only. files[] MUST include create entries for BOTH:
+- %s
+- %s
+Do not nest extra path segments (e.g. kafka/) under the service directory. Keep HCL excerpts shorter if needed to avoid truncation.`, zh, en)
+}
+
+// CanonicalizePracticeBodies remaps AI-emitted practice bodies onto the canonical
+// C-repo paths for {service}/{slug}.md. Nested B paths like
+// examples/dms/kafka/instance-configuration often cause models to write
+// docs/.../dms/kafka/instance_configuration.md or hyphenated filenames.
+func CanonicalizePracticeBodies(files []model.DocFileChange, service, slug string) []model.DocFileChange {
+	service = strings.TrimSpace(service)
+	slug = strings.TrimSuffix(strings.TrimSpace(slug), ".md")
+	if service == "" || slug == "" || len(files) == 0 {
+		return files
+	}
+	wantZh := filepath.ToSlash(filepath.Join("docs/zh-cn/best-practices", service, slug+".md"))
+	wantEn := filepath.ToSlash(filepath.Join("docs/en-us/best-practices", service, slug+".md"))
+	bases := practiceBodyBasenames(slug)
+
+	var out []model.DocFileChange
+	var zhBody, enBody *model.DocFileChange
+	take := func(dst **model.DocFileChange, f model.DocFileChange, want string) {
+		cp := f
+		cp.Path = want
+		if *dst == nil || len(strings.TrimSpace(cp.Content)) > len(strings.TrimSpace((*dst).Content)) {
+			*dst = &cp
+		}
+	}
+
+	for _, f := range files {
+		p := filepath.ToSlash(f.Path)
+		base := filepath.Base(p)
+		if !isPracticeBodyBase(base, bases) || !strings.Contains(p, "/best-practices/") {
+			out = append(out, f)
+			continue
+		}
+		switch {
+		case strings.Contains(p, "/zh-cn/"):
+			take(&zhBody, f, wantZh)
+		case strings.Contains(p, "/en-us/"):
+			take(&enBody, f, wantEn)
+		default:
+			out = append(out, f)
+		}
+	}
+	if zhBody != nil {
+		out = append(out, *zhBody)
+	}
+	if enBody != nil {
+		out = append(out, *enBody)
+	}
+	return out
+}
+
+func practiceBodyBasenames(slug string) []string {
+	slug = strings.TrimSuffix(strings.TrimSpace(slug), ".md")
+	forms := []string{
+		slug + ".md",
+		mapping.PreferUnderscore(slug) + ".md",
+		strings.ReplaceAll(slug, "_", "-") + ".md",
+	}
+	seen := map[string]struct{}{}
+	var out []string
+	for _, f := range forms {
+		k := strings.ToLower(f)
+		if _, ok := seen[k]; ok {
+			continue
+		}
+		seen[k] = struct{}{}
+		out = append(out, f)
+	}
+	return out
+}
+
+func isPracticeBodyBase(base string, bases []string) bool {
+	base = strings.ToLower(filepath.Base(base))
+	for _, b := range bases {
+		if base == strings.ToLower(b) {
+			return true
+		}
+	}
+	return false
+}
+
+func filePaths(files []model.DocFileChange) []string {
+	out := make([]string, 0, len(files))
+	for _, f := range files {
+		out = append(out, filepath.ToSlash(f.Path))
+	}
+	return out
+}
 
 func (g *DocGenerator) dumpAIFailure(practiceID string, attempt int, raw string, cause error) string {
 	if g == nil || g.Settings == nil {
@@ -429,13 +537,14 @@ func requireBilingualBodies(files []model.DocFileChange, _docsRoot, service, slu
 	for _, f := range files {
 		switch filepath.ToSlash(f.Path) {
 		case zh:
-			hasZh = true
+			hasZh = strings.TrimSpace(f.Content) != ""
 		case en:
-			hasEn = true
+			hasEn = strings.TrimSpace(f.Content) != ""
 		}
 	}
 	if !hasZh || !hasEn {
-		return fmt.Errorf("bilingual bodies required: missing %v", map[string]bool{"zh": hasZh, "en": hasEn})
+		return fmt.Errorf("bilingual bodies required: missing map[en:%v zh:%v] want [%s %s] got %v",
+			hasEn, hasZh, en, zh, filePaths(files))
 	}
 	return nil
 }

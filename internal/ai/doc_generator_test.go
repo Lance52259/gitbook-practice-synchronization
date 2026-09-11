@@ -92,6 +92,50 @@ func TestPackSourceContext(t *testing.T) {
 	}
 }
 
+func TestCanonicalizePracticeBodiesNestedKafkaPath(t *testing.T) {
+	in := []model.DocFileChange{
+		{Path: "docs/zh-cn/best-practices/dms/kafka/instance-configuration.md", Action: "create", Content: "# 部署配置\n"},
+		{Path: "docs/en-us/best-practices/dms/kafka/instance_configuration.md", Action: "create", Content: "# Deploy Configuration\n"},
+		{Path: "docs/zh-cn/SUMMARY.md", Action: "update", Content: "# Summary\n"},
+	}
+	got := ai.CanonicalizePracticeBodies(in, "dms", "instance_configuration")
+	paths := map[string]string{}
+	for _, f := range got {
+		paths[f.Path] = f.Content
+	}
+	if paths["docs/zh-cn/best-practices/dms/instance_configuration.md"] == "" {
+		t.Fatalf("zh body not canonicalized: %+v", got)
+	}
+	if paths["docs/en-us/best-practices/dms/instance_configuration.md"] == "" {
+		t.Fatalf("en body not canonicalized: %+v", got)
+	}
+	if _, ok := paths["docs/zh-cn/best-practices/dms/kafka/instance-configuration.md"]; ok {
+		t.Fatal("nested zh path should be remapped away")
+	}
+	if paths["docs/zh-cn/SUMMARY.md"] == "" {
+		t.Fatal("non-body files must be preserved")
+	}
+}
+
+func TestResolveTargetPathNestedDMSKafka(t *testing.T) {
+	s := &config.Settings{
+		SkillID:   "best-practice-doc",
+		CDocsRoot: "docs/zh-cn/best-practices",
+		Mapping: config.MappingConfig{
+			Defaults: config.MappingDefaults{
+				TargetPathPattern: "docs/zh-cn/best-practices/{service}/{practice_slug}.md",
+				SkillID:           "best-practice-doc",
+				Template:          "best_practice_template.md",
+			},
+		},
+	}
+	p := model.Practice{PracticeID: "examples/dms/kafka/instance-configuration"}
+	path, _, _ := ai.ResolveTargetPath(s, p)
+	if path != "docs/zh-cn/best-practices/dms/instance_configuration.md" {
+		t.Fatalf("path=%s", path)
+	}
+}
+
 func contains(s, sub string) bool {
 	return len(s) >= len(sub) && (s == sub || len(sub) == 0 || (len(s) > 0 && (func() bool {
 		for i := 0; i+len(sub) <= len(s); i++ {
