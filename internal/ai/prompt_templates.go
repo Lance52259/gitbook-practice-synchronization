@@ -79,14 +79,21 @@ func (p *PromptTemplates) BuildMessages(in BuildMessagesInput) ([]provider.ChatM
 
 	baselineText := formatNavBaselines(in.NavBaselines)
 
+	enPath := strings.Replace(in.TargetPath, "docs/zh-cn/", "docs/en-us/", 1)
+	if enPath == in.TargetPath || !strings.HasPrefix(enPath, "docs/en-us/") {
+		// Fallback when target is unexpected; keep explicit pattern for the model.
+		enPath = "docs/en-us/best-practices/{service}/{practice}.md"
+	}
+
 	system := "你是文档工程师，根据最佳实践源码与 Skill 约束，为文档仓库生成变更。\n" + outputSchemaHint
 	user := fmt.Sprintf(`## Skill: %s
 %s
 
 ## 目标
 - practice_id: %s
-- 建议写入路径（中文正文）: %s
-- 英文正文对称路径: docs/en-us/best-practices/{service}/{practice}.md
+- 中文正文路径（必须 create）: %s
+- 英文正文路径（必须 create）: %s
+- 路径规则: 仅 docs/{zh-cn|en-us}/best-practices/{service}/{practice_slug}.md；禁止把 B 仓中间目录（如 kafka/）再嵌进 service 下
 - 处理顺序: 中文正文 → 英文正文 → 英文导航(字母序) → 中文导航(跟随英文)
 - C 仓文档根: %s
 
@@ -104,7 +111,7 @@ func (p *PromptTemplates) BuildMessages(in BuildMessagesInput) ([]provider.ChatM
 
 ## 源最佳实践上下文
 %s
-`, in.Skill.Title, in.Skill.Body, in.Practice.PracticeID, in.TargetPath, in.DocsRoot, template, categoryBlock, refText, baselineText, in.SourceContext)
+`, in.Skill.Title, in.Skill.Body, in.Practice.PracticeID, in.TargetPath, enPath, in.DocsRoot, template, categoryBlock, refText, baselineText, in.SourceContext)
 
 	return []provider.ChatMessage{
 		{Role: "system", Content: system},
