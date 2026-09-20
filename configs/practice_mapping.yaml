@@ -69,5 +69,27 @@ practice_aliases:
   examples/dew/kps-keypair: keypair
   dew/kps-keypair: keypair
   kps-keypair: keypair
+  # C docs historically used instance_with_*; B folders are attached-*
+  examples/ecs/attached-volume: instance_with_volume
+  ecs/attached-volume: instance_with_volume
+  attached-volume: instance_with_volume
+  examples/ecs/attached-interface: instance_with_interface
+  ecs/attached-interface: instance_with_interface
+  attached-interface: instance_with_interface
+  # DNS: keep descriptive public_zone (not oversimplified zone)
+  examples/dns/zone: public_zone
+  dns/zone: public_zone
+  # DCS: reject redis_ha_* abbreviation; keep high_availability
+  examples/dcs/redis-ha-instance: redis_high_availability_instance
+  dcs/redis-ha-instance: redis_high_availability_instance
+  redis_ha_instance: redis_high_availability_instance
+  # DDM: keep ddm_account (not bare account)
+  examples/ddm/ddm-account: ddm_account
+  ddm/ddm-account: ddm_account
+  ddm/account: ddm_account
+  # EG: nested B path → descriptive flat C stem
+  examples/eg/event-subscriptions/custom: event_subscription_custom_to_eg
+  eg/event-subscriptions/custom: event_subscription_custom_to_eg
+  eg/custom: event_subscription_custom_to_eg
 
 rules: []

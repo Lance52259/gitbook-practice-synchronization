@@ -93,7 +93,7 @@ func (p *PromptTemplates) BuildMessages(in BuildMessagesInput) ([]provider.ChatM
 - practice_id: %s
 - 中文正文路径（必须 create）: %s
 - 英文正文路径（必须 create）: %s
-- 路径规则: 仅 docs/{zh-cn|en-us}/best-practices/{service}/{practice_slug}.md；禁止把 B 仓中间目录（如 kafka/）再嵌进 service 下
+- 路径规则: 正文必须写到下列中英文路径（practice_slug 可含中间目录，如 kafka/instance_configuration；禁止擅自扁平化或另造精简文件名）
 - 处理顺序: 中文正文 → 英文正文 → 英文导航(字母序) → 中文导航(跟随英文)
 - C 仓文档根: %s
 

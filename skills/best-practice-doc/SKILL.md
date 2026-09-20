@@ -46,7 +46,7 @@ B/C 的 owner/name、默认分支均以**当前运行配置为准**，本文件�
 ### 命名约定
 
 - `{service}`：华为云服务简称，**全小写**（如 `ecs`、`anti-ddos`），与 C 仓目录一致；不等于 B 仓 `examples/` 照抄（见 `configs/practice_mapping.yaml` 的 `service_aliases`）。
-- `{practice}`：实践文件名（无 `.md`），中英共用；优先下划线风格，可用 `practice_aliases` 覆盖。
+- `{practice}`：实践路径（无 `.md`），中英共用；优先下划线风格；可含中间目录（如 `kafka/instance_configuration`）；可用 `practice_aliases` 覆盖。禁止另造过于精简、无法表达意图的文件名。
 
 ---
 

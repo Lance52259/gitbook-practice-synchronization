@@ -24,6 +24,20 @@ func (p Practice) Slug() string {
 	return p.PracticeID
 }
 
+// RelUnderService returns the path under the service directory.
+// examples/dms/kafka/instance-configuration → kafka/instance-configuration
+// examples/dns/zone → zone
+func (p Practice) RelUnderService() string {
+	parts := splitPath(p.PracticeID)
+	if len(parts) >= 3 && parts[0] == "examples" {
+		return strings.Join(parts[2:], "/")
+	}
+	if len(parts) >= 2 && parts[0] != "examples" {
+		return strings.Join(parts[1:], "/")
+	}
+	return p.Slug()
+}
+
 // Service returns the service segment for paths like examples/ecs/basic → ecs.
 func (p Practice) Service() string {
 	parts := splitPath(p.PracticeID)
