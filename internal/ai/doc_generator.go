@@ -388,17 +388,21 @@ Ensure every string (especially files[].content) has correct escaping, and that 
 func bilingualRepairHint(service, slug string) string {
 	zh := filepath.ToSlash(filepath.Join("docs/zh-cn/best-practices", service, slug+".md"))
 	en := filepath.ToSlash(filepath.Join("docs/en-us/best-practices", service, slug+".md"))
+	nestNote := "Use exactly these paths (including any middle directories in the practice slug)."
+	if !strings.Contains(slug, "/") {
+		nestNote = "Do not invent extra middle directories under the service directory."
+	}
 	return fmt.Sprintf(`Previous output was missing required bilingual practice bodies.
 Reply with ONE JSON object only. files[] MUST include create entries for BOTH:
 - %s
 - %s
-Do not nest extra path segments (e.g. kafka/) under the service directory. Keep HCL excerpts shorter if needed to avoid truncation.`, zh, en)
+%s Keep HCL excerpts shorter if needed to avoid truncation.`, zh, en, nestNote)
 }
 
 // CanonicalizePracticeBodies remaps AI-emitted practice bodies onto the canonical
-// C-repo paths for {service}/{slug}.md. Nested B paths like
-// examples/dms/kafka/instance-configuration often cause models to write
-// docs/.../dms/kafka/instance_configuration.md or hyphenated filenames.
+// C-repo paths for {service}/{slug}.md. Nested KEEP slugs like
+// dms/kafka/instance_configuration must stay nested; flat/hyphenated AI paths
+// (Path A oversimplifications) are rewritten onto the canonical slug.
 func CanonicalizePracticeBodies(files []model.DocFileChange, service, slug string) []model.DocFileChange {
 	service = strings.TrimSpace(service)
 	slug = strings.TrimSuffix(strings.TrimSpace(slug), ".md")
@@ -451,15 +455,24 @@ func practiceBodyBasenames(slug string) []string {
 		mapping.PreferUnderscore(slug) + ".md",
 		strings.ReplaceAll(slug, "_", "-") + ".md",
 	}
+	leaf := filepath.Base(strings.ReplaceAll(slug, "\\", "/"))
+	if leaf != "" && leaf != slug {
+		forms = append(forms,
+			leaf+".md",
+			mapping.PreferUnderscore(leaf)+".md",
+			strings.ReplaceAll(leaf, "_", "-")+".md",
+		)
+	}
 	seen := map[string]struct{}{}
 	var out []string
 	for _, f := range forms {
-		k := strings.ToLower(f)
+		// Compare as basename only in isPracticeBodyBase.
+		k := strings.ToLower(filepath.Base(f))
 		if _, ok := seen[k]; ok {
 			continue
 		}
 		seen[k] = struct{}{}
-		out = append(out, f)
+		out = append(out, k)
 	}
 	return out
 }

@@ -94,23 +94,23 @@ func TestPackSourceContext(t *testing.T) {
 
 func TestCanonicalizePracticeBodiesNestedKafkaPath(t *testing.T) {
 	in := []model.DocFileChange{
-		{Path: "docs/zh-cn/best-practices/dms/kafka/instance-configuration.md", Action: "create", Content: "# 部署配置\n"},
-		{Path: "docs/en-us/best-practices/dms/kafka/instance_configuration.md", Action: "create", Content: "# Deploy Configuration\n"},
+		{Path: "docs/zh-cn/best-practices/dms/instance_configuration.md", Action: "create", Content: "# 部署配置\n"},
+		{Path: "docs/en-us/best-practices/dms/instance-configuration.md", Action: "create", Content: "# Deploy Configuration\n"},
 		{Path: "docs/zh-cn/SUMMARY.md", Action: "update", Content: "# Summary\n"},
 	}
-	got := ai.CanonicalizePracticeBodies(in, "dms", "instance_configuration")
+	got := ai.CanonicalizePracticeBodies(in, "dms", "kafka/instance_configuration")
 	paths := map[string]string{}
 	for _, f := range got {
 		paths[f.Path] = f.Content
 	}
-	if paths["docs/zh-cn/best-practices/dms/instance_configuration.md"] == "" {
-		t.Fatalf("zh body not canonicalized: %+v", got)
+	if paths["docs/zh-cn/best-practices/dms/kafka/instance_configuration.md"] == "" {
+		t.Fatalf("zh body not canonicalized to nested KEEP path: %+v", got)
 	}
-	if paths["docs/en-us/best-practices/dms/instance_configuration.md"] == "" {
-		t.Fatalf("en body not canonicalized: %+v", got)
+	if paths["docs/en-us/best-practices/dms/kafka/instance_configuration.md"] == "" {
+		t.Fatalf("en body not canonicalized to nested KEEP path: %+v", got)
 	}
-	if _, ok := paths["docs/zh-cn/best-practices/dms/kafka/instance-configuration.md"]; ok {
-		t.Fatal("nested zh path should be remapped away")
+	if _, ok := paths["docs/zh-cn/best-practices/dms/instance_configuration.md"]; ok {
+		t.Fatal("flat Path A zh path should be remapped away")
 	}
 	if paths["docs/zh-cn/SUMMARY.md"] == "" {
 		t.Fatal("non-body files must be preserved")
@@ -131,7 +131,7 @@ func TestResolveTargetPathNestedDMSKafka(t *testing.T) {
 	}
 	p := model.Practice{PracticeID: "examples/dms/kafka/instance-configuration"}
 	path, _, _ := ai.ResolveTargetPath(s, p)
-	if path != "docs/zh-cn/best-practices/dms/instance_configuration.md" {
+	if path != "docs/zh-cn/best-practices/dms/kafka/instance_configuration.md" {
 		t.Fatalf("path=%s", path)
 	}
 }

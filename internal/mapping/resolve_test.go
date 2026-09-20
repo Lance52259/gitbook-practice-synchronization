@@ -3,6 +3,7 @@ package mapping
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/chnsz/gitbook-practice-synchronization/internal/config"
@@ -97,6 +98,68 @@ func TestIsSyncedKpsKeypairMatchesKeypair(t *testing.T) {
 	}
 }
 
+// PR #261 regression: B examples/ecs/attached-volume already documented as instance_with_volume.md
+// (Reference link points at the same examples path).
+func TestIsSyncedViaSourceCodeReference(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "docs", "zh-cn", "best-practices", "ecs")
+	body := `# 部署挂载数据盘的实例
+
+## 参考信息
+
+- [ECS挂载数据盘最佳实践源码参考](https://github.com/huaweicloud/terraform-provider-huaweicloud/tree/master/examples/ecs/attached-volume)
+`
+	if err := mkdirWrite(dir, "instance_with_volume.md", body); err != nil {
+		t.Fatal(err)
+	}
+
+	r := NewResolver(config.MappingConfig{}, "docs/zh-cn/best-practices")
+	if err := r.IndexDocsRoot(root); err != nil {
+		t.Fatal(err)
+	}
+
+	p := model.Practice{PracticeID: "examples/ecs/attached-volume", SourcePath: "examples/ecs/attached-volume"}
+	if !r.IsSynced(p) {
+		t.Fatal("attached-volume must be synced via Reference source link to instance_with_volume.md")
+	}
+	got := r.Resolve(p)
+	if got.Service != "ecs" || got.Slug != "instance_with_volume" {
+		t.Fatalf("Resolve=%+v want ecs/instance_with_volume", got)
+	}
+}
+
+func TestIsSyncedAttachedVolumeAliasAndRenameCandidate(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "docs", "zh-cn", "best-practices", "ecs")
+	if err := mkdirWrite(dir, "instance_with_volume.md", "# 部署\n"); err != nil {
+		t.Fatal(err)
+	}
+	r := NewResolver(config.MappingConfig{
+		PracticeAliases: map[string]string{"examples/ecs/attached-volume": "instance_with_volume"},
+	}, "docs/zh-cn/best-practices")
+	if err := r.IndexDocsRoot(root); err != nil {
+		t.Fatal(err)
+	}
+	p := model.Practice{PracticeID: "examples/ecs/attached-volume"}
+	if !r.IsSynced(p) {
+		t.Fatal("alias/rename candidate should mark attached-volume synced")
+	}
+}
+
+func TestSlugCandidatesAttachedVolumeRename(t *testing.T) {
+	cands := SlugCandidates("ecs", "attached-volume")
+	found := false
+	for _, c := range cands {
+		if NormalizeKey(c) == "instancewithvolume" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("candidates=%v missing instance_with_volume", cands)
+	}
+}
+
 func TestResolveKpsKeypairAlias(t *testing.T) {
 	r := NewResolver(config.MappingConfig{
 		PracticeAliases: map[string]string{"examples/dew/kps-keypair": "keypair"},
@@ -124,6 +187,133 @@ func TestSlugCandidatesDropsShortProductPrefix(t *testing.T) {
 		if NormalizeKey(c) == "key" {
 			t.Fatalf("kms_key must not yield key: %v", SlugCandidates("dew", "kms_key"))
 		}
+	}
+}
+
+func TestResolveKeepsNestedDMSKafkaAndIgnoresFlatDuplicate(t *testing.T) {
+	root := t.TempDir()
+	flat := filepath.Join(root, "docs", "zh-cn", "best-practices", "dms")
+	nested := filepath.Join(flat, "kafka")
+	if err := mkdirWrite(flat, "instance_configuration.md", "# flat Path A\n"); err != nil {
+		t.Fatal(err)
+	}
+	body := `# Deploy Kafka Instance Configuration
+
+## Reference
+
+- [source](https://github.com/huaweicloud/terraform-provider-huaweicloud/tree/master/examples/dms/kafka/instance-configuration)
+`
+	if err := mkdirWrite(nested, "instance_configuration.md", body); err != nil {
+		t.Fatal(err)
+	}
+
+	r := NewResolver(config.MappingConfig{}, "docs/zh-cn/best-practices")
+	if err := r.IndexDocsRoot(root); err != nil {
+		t.Fatal(err)
+	}
+	p := model.Practice{PracticeID: "examples/dms/kafka/instance-configuration"}
+	if !r.IsSynced(p) {
+		t.Fatal("nested KEEP doc must count as synced")
+	}
+	got := r.Resolve(p)
+	if got.Service != "dms" || got.Slug != "kafka/instance_configuration" {
+		t.Fatalf("Resolve=%+v want dms/kafka/instance_configuration", got)
+	}
+	if got.RelPath != "docs/zh-cn/best-practices/dms/kafka/instance_configuration.md" {
+		t.Fatalf("RelPath=%s", got.RelPath)
+	}
+}
+
+func TestResolvePathBAliasesForDuplicateTable(t *testing.T) {
+	root := t.TempDir()
+	cases := []struct {
+		id, svc, file, slug string
+	}{
+		{"examples/dns/zone", "dns", "public_zone.md", "public_zone"},
+		{"examples/ecs/attached-volume", "ecs", "instance_with_volume.md", "instance_with_volume"},
+		{"examples/ecs/attached-interface", "ecs", "instance_with_interface.md", "instance_with_interface"},
+		{"examples/dcs/redis-high-availability-instance", "dcs", "redis_high_availability_instance.md", "redis_high_availability_instance"},
+		{"examples/ddm/ddm-account", "ddm", "ddm_account.md", "ddm_account"},
+		{"examples/eg/event-subscriptions/custom", "eg", "event_subscription_custom_to_eg.md", "event_subscription_custom_to_eg"},
+	}
+	cfg := config.MappingConfig{PracticeAliases: map[string]string{
+		"examples/dns/zone":                   "public_zone",
+		"examples/ecs/attached-volume":        "instance_with_volume",
+		"examples/ecs/attached-interface":     "instance_with_interface",
+		"redis_ha_instance":                   "redis_high_availability_instance",
+		"examples/ddm/ddm-account":            "ddm_account",
+		"examples/eg/event-subscriptions/custom": "event_subscription_custom_to_eg",
+	}}
+	for _, tc := range cases {
+		dir := filepath.Join(root, "docs", "zh-cn", "best-practices", tc.svc)
+		// Also plant oversimplified Path A where applicable
+		switch tc.svc {
+		case "dns":
+			_ = mkdirWrite(dir, "zone.md", "# Path A\n")
+		case "ecs":
+			if strings.Contains(tc.file, "volume") {
+				_ = mkdirWrite(dir, "attached_volume.md", "# Path A\n")
+			} else {
+				_ = mkdirWrite(dir, "attached_interface.md", "# Path A\n")
+			}
+		case "dcs":
+			_ = mkdirWrite(dir, "redis_ha_instance.md", "# Path A\n")
+		case "ddm":
+			_ = mkdirWrite(dir, "account.md", "# Path A\n")
+		case "eg":
+			_ = mkdirWrite(dir, "custom.md", "# Path A\n")
+		}
+		if err := mkdirWrite(dir, tc.file, "# KEEP\n"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r := NewResolver(cfg, "docs/zh-cn/best-practices")
+	if err := r.IndexDocsRoot(root); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range cases {
+		p := model.Practice{PracticeID: tc.id}
+		if !r.IsSynced(p) {
+			t.Fatalf("%s should be synced to KEEP", tc.id)
+		}
+		got := r.Resolve(p)
+		if got.Service != tc.svc || got.Slug != tc.slug {
+			t.Fatalf("%s Resolve=%+v want %s/%s", tc.id, got, tc.svc, tc.slug)
+		}
+	}
+}
+
+func TestFlatPathAAloneDoesNotSyncNestedCanonical(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "docs", "zh-cn", "best-practices", "dms")
+	if err := mkdirWrite(dir, "instance_configuration.md", "# Path A only\n"); err != nil {
+		t.Fatal(err)
+	}
+	r := NewResolver(config.MappingConfig{}, "docs/zh-cn/best-practices")
+	if err := r.IndexDocsRoot(root); err != nil {
+		t.Fatal(err)
+	}
+	p := model.Practice{PracticeID: "examples/dms/kafka/instance-configuration"}
+	if r.IsSynced(p) {
+		t.Fatal("flat Path A must not mark nested KEEP target as synced")
+	}
+	got := r.Resolve(p)
+	if got.Slug != "kafka/instance_configuration" {
+		t.Fatalf("slug=%s", got.Slug)
+	}
+}
+
+func TestSlugCandidatesAvailabilityAbbrev(t *testing.T) {
+	cands := SlugCandidates("dcs", "redis-high-availability-instance")
+	found := false
+	for _, c := range cands {
+		if NormalizeKey(c) == "redishainstance" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("candidates=%v missing redis_ha_instance", cands)
 	}
 }
 
