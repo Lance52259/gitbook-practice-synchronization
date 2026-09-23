@@ -29,6 +29,7 @@
 - 英文源码参考链接锚文本：`Best Practice Source Code Reference For {ServiceName} {PracticeObject}`（如 `… For AAD Black/White Lists`；**不要**带 `Deploy`；勿颠倒语序）
 - 中文源码参考链接锚文本：`{服务名}{场景}最佳实践源码参考`（「最佳实践」只出现在源码锚文本，不出现在正文 H1）
 - 正文 H1 / index 列表：中文 `部署…`、英文 `Deploy …`；禁止 `AAD黑白名单最佳实践` / `AAD Black/White Lists`
+- H1/场景须对齐本实践 HCL；`eip-with-shared-bandwidth` ≠ associate（资源内 WHOLE+id vs `eip_bandwidth_associate`）
 - 无 data source：导语用「主要资源」/ `main resources`，禁止空 `### 数据源`
 - tfvars 步骤标题含「（可选）」/ `Required … (Optional)`
 - 步骤 HCL 内联 `variable`；无 region 参数时用完整 region 缺省继承注释

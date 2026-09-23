@@ -94,6 +94,7 @@ func (p *PromptTemplates) BuildMessages(in BuildMessagesInput) ([]provider.ChatM
 - 中文正文路径（必须 create）: %s
 - 英文正文路径（必须 create）: %s
 - 路径规则: 正文必须写到下列中英文路径（practice_slug 可含中间目录，如 kafka/instance_configuration；禁止擅自扁平化或另造精简文件名）
+- 场景与 H1 必须严格依据「源最佳实践上下文」中的 README + HCL：禁止照抄导航基线里同服务兄弟文档的标题/表述；源码若在 vpc_eip.bandwidth 内用 WHOLE+id 挂共享带宽，H1 用 Deploy EIP on Shared Bandwidth / 部署共享带宽上的弹性公网IP，禁止复用 associate 篇的 Bound/关联 标题，也禁止写 association resource
 - 处理顺序: 中文正文 → 英文正文 → 英文导航(字母序) → 中文导航(跟随英文)
 - C 仓文档根: %s
 
@@ -106,7 +107,7 @@ func (p *PromptTemplates) BuildMessages(in BuildMessagesInput) ([]provider.ChatM
 ## 参考资料
 %s
 
-## C 仓导航基线（必须保留全部已有内容；禁止整文件重写）
+## C 仓导航基线（必须保留全部已有内容；禁止整文件重写；其中已有实践标题仅供避让重名，不得抄成本实践 H1）
 %s
 
 ## 源最佳实践上下文

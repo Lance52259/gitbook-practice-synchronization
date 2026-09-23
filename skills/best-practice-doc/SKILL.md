@@ -100,6 +100,7 @@ B/C 的 owner/name、默认分支均以**当前运行配置为准**，本文件�
 - 不要只生成中文、省略英文（步骤 2–5 为必做链路）。
 - 不要先改中文导航再改英文（会破坏「英文定序、中文跟随」）。
 - 不要编造源脚本中不存在的 resource / data source / 参数。
+- 不要把同服务兄弟实践的 H1/场景叙述套到本实践上；绑定方式以本目录 HCL 为准（资源内 `bandwidth` 块 ≠ `eip_bandwidth_associate`）。
 - 不要自由新增模板未定义的一级/二级标题。
 - 不要把元注释写进最终 Markdown；敏感信息用占位符。
 - 链接使用半角 `()`；每个 `.md` 文件末尾保留一个空行。
@@ -138,6 +139,12 @@ B/C 的 owner/name、默认分支均以**当前运行配置为准**，本文件�
 - **H1**：`# 部署{场景简述}`  
   - **正确：** `# 部署基础防护`、`# 部署基础实例`、`# 部署黑白名单`  
   - **错误（禁止，PR #3 曾出现）：** `# AAD黑白名单最佳实践`（勿以服务缩写开头；**H1 不要以「最佳实践」结尾**）
+- **场景必须来自本实践源码，禁止抄同服务兄弟文档**：
+  - 先读本目录 `README.md` 标题与 `main.tf` 实际 resource / 绑定方式，再定 H1 与应用场景；**不得**因导航基线里已有相似标题就复用。
+  - 同一服务下若已有兄弟实践，H1 必须能区分机制差异（例：EIP 共享带宽两条路径）：
+    - `eip-with-shared-bandwidth`：在 `huaweicloud_vpc_eip` 的 `bandwidth` 块内用 `share_type = "WHOLE"` + `id = …` **创建时直接挂到共享带宽** → H1 宜为 `部署共享带宽上的弹性公网IP` / `Deploy EIP on Shared Bandwidth`（对齐 B README *Create EIP on Shared Bandwidth*）；**禁止**写成「绑定/关联到共享带宽」或复用 associate 篇的 `Deploy EIP Bound to Shared Bandwidth`。
+    - `eip-associate-shared-bandwidth`：先建独立带宽 EIP（`PER`），再经 `huaweicloud_eip_bandwidth_associate` **二次关联** → 才用「绑定/关联」类标题。
+  - 应用场景与步骤叙述须与资源图一致：源码没有 `huaweicloud_eip_bandwidth_associate` 时，禁止写「通过关联资源 / association resource 绑定」，也禁止把「association management」套到资源内 `bandwidth` 块场景。
 - **index 列表 / SUMMARY 实践行标题**：与正文 **H1 全文一致**（含「部署」；不含「最佳实践」后缀）
 - **应用场景**第二段起句：用 `本最佳实践将介绍如何使用Terraform…`（不要写成「本实践将介绍」）
 
@@ -202,6 +209,9 @@ B/C 的 owner/name、默认分支均以**当前运行配置为准**，本文件�
 - **H1**：`# Deploy {Scene}` — **must start with `Deploy`**  
   - **Correct:** `# Deploy Basic Protection`、`# Deploy Basic Instance`、`# Deploy Black/White Lists`  
   - **Wrong (forbidden):** `# AAD Black/White Lists`（missing `Deploy`）
+- **Derive scene from this practice only** (README + HCL). Do **not** copy a sibling practice’s H1 from nav baselines when the binding mechanism differs.
+  - EIP: `eip-with-shared-bandwidth` binds shared bandwidth **inside** `huaweicloud_vpc_eip.bandwidth` (`share_type = "WHOLE"`, `id = …`) → `# Deploy EIP on Shared Bandwidth`. Do **not** reuse `# Deploy EIP Bound to Shared Bandwidth` (that is for `eip-associate-shared-bandwidth` + `huaweicloud_eip_bandwidth_associate`).
+  - If source has no associate resource, do not write “association resource” / “EIP-to-shared-bandwidth association management”.
 - **index list / SUMMARY practice title**: **identical to H1**
 - **Application Scenario** second paragraph lead-in: `This best practice will introduce how to use Terraform…`（**not** `This practice will introduce`）
 
